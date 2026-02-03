@@ -44,6 +44,10 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          max_points: number | null
+          model_answer_en: string | null
+          model_answer_ru: string | null
+          model_answer_uz: string | null
           options: Json
           order_index: number
           points: number
@@ -51,6 +55,8 @@ export type Database = {
           question_text_ru: string | null
           question_text_uz: string
           question_type: Database["public"]["Enums"]["question_type"]
+          rubric_ru: string | null
+          rubric_uz: string | null
           test_id: string
         }
         Insert: {
@@ -58,6 +64,10 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          max_points?: number | null
+          model_answer_en?: string | null
+          model_answer_ru?: string | null
+          model_answer_uz?: string | null
           options?: Json
           order_index?: number
           points?: number
@@ -65,6 +75,8 @@ export type Database = {
           question_text_ru?: string | null
           question_text_uz: string
           question_type?: Database["public"]["Enums"]["question_type"]
+          rubric_ru?: string | null
+          rubric_uz?: string | null
           test_id: string
         }
         Update: {
@@ -72,6 +84,10 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          max_points?: number | null
+          model_answer_en?: string | null
+          model_answer_ru?: string | null
+          model_answer_uz?: string | null
           options?: Json
           order_index?: number
           points?: number
@@ -79,6 +95,8 @@ export type Database = {
           question_text_ru?: string | null
           question_text_uz?: string
           question_type?: Database["public"]["Enums"]["question_type"]
+          rubric_ru?: string | null
+          rubric_uz?: string | null
           test_id?: string
         }
         Relationships: [
@@ -94,6 +112,7 @@ export type Database = {
       subjects: {
         Row: {
           created_at: string
+          enabled: boolean | null
           id: string
           name_en: string | null
           name_qq: string | null
@@ -102,6 +121,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          enabled?: boolean | null
           id?: string
           name_en?: string | null
           name_qq?: string | null
@@ -110,6 +130,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          enabled?: boolean | null
           id?: string
           name_en?: string | null
           name_qq?: string | null
@@ -120,40 +141,55 @@ export type Database = {
       }
       test_attempts: {
         Row: {
+          ai_evaluation: Json | null
           answers: Json
           correct_answers: number | null
+          evaluation_status: string | null
           finished_at: string | null
           id: string
+          mcq_score: number | null
           participant_id: string
           score: number | null
           started_at: string
           status: Database["public"]["Enums"]["attempt_status"]
           test_id: string
           total_questions: number | null
+          written_answers: Json | null
+          written_score: number | null
         }
         Insert: {
+          ai_evaluation?: Json | null
           answers?: Json
           correct_answers?: number | null
+          evaluation_status?: string | null
           finished_at?: string | null
           id?: string
+          mcq_score?: number | null
           participant_id: string
           score?: number | null
           started_at?: string
           status?: Database["public"]["Enums"]["attempt_status"]
           test_id: string
           total_questions?: number | null
+          written_answers?: Json | null
+          written_score?: number | null
         }
         Update: {
+          ai_evaluation?: Json | null
           answers?: Json
           correct_answers?: number | null
+          evaluation_status?: string | null
           finished_at?: string | null
           id?: string
+          mcq_score?: number | null
           participant_id?: string
           score?: number | null
           started_at?: string
           status?: Database["public"]["Enums"]["attempt_status"]
           test_id?: string
           total_questions?: number | null
+          written_answers?: Json | null
+          written_score?: number | null
         }
         Relationships: [
           {
@@ -206,6 +242,7 @@ export type Database = {
           randomize_questions: boolean
           subject_id: string | null
           test_code: string | null
+          test_format: string | null
           title_en: string | null
           title_ru: string | null
           title_uz: string
@@ -224,6 +261,7 @@ export type Database = {
           randomize_questions?: boolean
           subject_id?: string | null
           test_code?: string | null
+          test_format?: string | null
           title_en?: string | null
           title_ru?: string | null
           title_uz: string
@@ -242,6 +280,7 @@ export type Database = {
           randomize_questions?: boolean
           subject_id?: string | null
           test_code?: string | null
+          test_format?: string | null
           title_en?: string | null
           title_ru?: string | null
           title_uz?: string
@@ -294,7 +333,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       attempt_status: "in_progress" | "finished"
-      question_type: "single_choice"
+      question_type: "single_choice" | "written"
       test_visibility: "public" | "private"
     }
     CompositeTypes: {
@@ -425,7 +464,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       attempt_status: ["in_progress", "finished"],
-      question_type: ["single_choice"],
+      question_type: ["single_choice", "written"],
       test_visibility: ["public", "private"],
     },
   },

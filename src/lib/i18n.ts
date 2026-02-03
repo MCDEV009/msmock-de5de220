@@ -82,6 +82,17 @@ export const translations = {
     correctOption: 'To\'g\'ri javob',
     addImage: 'Rasm qo\'shish',
     
+    // Written questions
+    writtenQuestion: 'Yozma savol',
+    modelAnswer: 'Namunaviy javob',
+    rubric: 'Baholash mezonlari',
+    answerA: 'Javob A',
+    answerB: 'Javob B',
+    aiEvaluation: 'AI baholashi',
+    evaluating: 'Baholanmoqda',
+    strengths: 'Kuchli tomonlar',
+    missingPoints: 'Yetishmayotgan jihatlar',
+    
     // Status
     inProgress: 'Jarayonda',
     finished: 'Tugatildi',

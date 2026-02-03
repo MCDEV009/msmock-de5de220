@@ -12,6 +12,7 @@ export interface Test {
   randomize_questions: boolean;
   randomize_options: boolean;
   negative_marking: boolean;
+  test_format: 'standard' | 'milliy_sertifikat';
   created_by?: string;
   created_at: string;
   updated_at: string;
@@ -24,6 +25,7 @@ export interface Subject {
   name_ru?: string;
   name_en?: string;
   name_qq?: string;
+  enabled?: boolean;
   created_at: string;
 }
 
@@ -34,12 +36,32 @@ export interface Question {
   question_text_ru?: string;
   question_text_en?: string;
   image_url?: string;
-  question_type: 'single_choice';
+  question_type: 'single_choice' | 'written';
   options: string[];
   correct_option: number;
   points: number;
+  max_points: number;
   order_index: number;
+  // Written question fields
+  model_answer_uz?: string;
+  model_answer_ru?: string;
+  model_answer_en?: string;
+  rubric_uz?: string;
+  rubric_ru?: string;
   created_at: string;
+}
+
+export interface WrittenAnswer {
+  answer_a: string;
+  answer_b: string;
+}
+
+export interface EvaluationResult {
+  score: number;
+  feedback_uz: string;
+  feedback_ru: string;
+  strengths: string[];
+  missing_points: string[];
 }
 
 export interface TestParticipant {
@@ -59,7 +81,13 @@ export interface TestAttempt {
   score: number;
   total_questions: number;
   correct_answers: number;
-  answers: Record<string, number>;
+  // Using any for JSON fields from database
+  answers: Record<string, number> | any;
+  written_answers: Record<string, WrittenAnswer> | any;
+  ai_evaluation: Record<string, EvaluationResult> | any;
+  mcq_score: number;
+  written_score: number;
+  evaluation_status: string;
 }
 
 export interface TestWithQuestions extends Test {

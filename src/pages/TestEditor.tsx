@@ -5,12 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Test, Question } from '@/types/test';
 import { User, Session } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { WrittenQuestionForm } from '@/components/admin/WrittenQuestionForm';
 import {
   Dialog,
   DialogContent,
@@ -44,9 +45,33 @@ import {
   Trash2, 
   GripVertical,
   Image as ImageIcon,
-  Save
+  Save,
+  CheckSquare,
+  PenLine
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+type QuestionType = 'single_choice' | 'written';
+
+interface McqFormData {
+  question_text_uz: string;
+  question_text_ru: string;
+  options: string[];
+  correct_option: number;
+  image_url: string;
+  points: number;
+}
+
+interface WrittenFormData {
+  question_text_uz: string;
+  question_text_ru: string;
+  model_answer_uz: string;
+  model_answer_ru: string;
+  rubric_uz: string;
+  rubric_ru: string;
+  max_points: number;
+  image_url: string;
+}
 
 function TestEditorContent() {
   const { testId } = useParams<{ testId: string }>();
@@ -63,14 +88,26 @@ function TestEditorContent() {
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null);
+  const [questionType, setQuestionType] = useState<QuestionType>('single_choice');
   
-  const [questionForm, setQuestionForm] = useState({
+  const [mcqForm, setMcqForm] = useState<McqFormData>({
     question_text_uz: '',
     question_text_ru: '',
     options: ['', '', '', ''],
     correct_option: 0,
     image_url: '',
     points: 1
+  });
+
+  const [writtenForm, setWrittenForm] = useState<WrittenFormData>({
+    question_text_uz: '',
+    question_text_ru: '',
+    model_answer_uz: '',
+    model_answer_ru: '',
+    rubric_uz: '',
+    rubric_ru: '',
+    max_points: 2,
+    image_url: ''
   });
 
   // Auth check
@@ -129,8 +166,8 @@ function TestEditorContent() {
     fetchData();
   }, [testId, user]);
 
-  const resetQuestionForm = () => {
-    setQuestionForm({
+  const resetForms = () => {
+    setMcqForm({
       question_text_uz: '',
       question_text_ru: '',
       options: ['', '', '', ''],
@@ -138,53 +175,118 @@ function TestEditorContent() {
       image_url: '',
       points: 1
     });
+    setWrittenForm({
+      question_text_uz: '',
+      question_text_ru: '',
+      model_answer_uz: '',
+      model_answer_ru: '',
+      rubric_uz: '',
+      rubric_ru: '',
+      max_points: 2,
+      image_url: ''
+    });
     setEditingQuestion(null);
+    setQuestionType('single_choice');
   };
 
   const handleOpenQuestionDialog = (question?: Question) => {
     if (question) {
       setEditingQuestion(question);
-      setQuestionForm({
-        question_text_uz: question.question_text_uz,
-        question_text_ru: question.question_text_ru || '',
-        options: question.options as string[],
-        correct_option: question.correct_option,
-        image_url: question.image_url || '',
-        points: question.points
-      });
+      setQuestionType(question.question_type);
+      
+      if (question.question_type === 'single_choice') {
+        setMcqForm({
+          question_text_uz: question.question_text_uz,
+          question_text_ru: question.question_text_ru || '',
+          options: question.options as string[],
+          correct_option: question.correct_option,
+          image_url: question.image_url || '',
+          points: question.points
+        });
+      } else {
+        setWrittenForm({
+          question_text_uz: question.question_text_uz,
+          question_text_ru: question.question_text_ru || '',
+          model_answer_uz: question.model_answer_uz || '',
+          model_answer_ru: question.model_answer_ru || '',
+          rubric_uz: question.rubric_uz || '',
+          rubric_ru: question.rubric_ru || '',
+          max_points: question.max_points || 2,
+          image_url: question.image_url || ''
+        });
+      }
     } else {
-      resetQuestionForm();
+      resetForms();
     }
     setQuestionDialogOpen(true);
   };
 
   const handleSaveQuestion = async () => {
-    if (!questionForm.question_text_uz.trim()) {
+    const isMcq = questionType === 'single_choice';
+    const form = isMcq ? mcqForm : writtenForm;
+    
+    if (!form.question_text_uz.trim()) {
       toast.error('Savol matnini kiriting');
       return;
     }
     
-    const filledOptions = questionForm.options.filter(o => o.trim());
-    if (filledOptions.length < 2) {
-      toast.error('Kamida 2 ta variant kerak');
-      return;
+    if (isMcq) {
+      const filledOptions = mcqForm.options.filter(o => o.trim());
+      if (filledOptions.length < 2) {
+        toast.error('Kamida 2 ta variant kerak');
+        return;
+      }
+    } else {
+      if (!writtenForm.model_answer_uz.trim()) {
+        toast.error('Namunaviy javobni kiriting');
+        return;
+      }
     }
     
-    const questionData = {
+    const mcqQuestionCount = questions.filter(q => q.question_type === 'single_choice').length;
+    const writtenQuestionCount = questions.filter(q => q.question_type === 'written').length;
+    
+    // Calculate order_index: MCQs first (0-34), then written (35-44)
+    let orderIndex = editingQuestion 
+      ? editingQuestion.order_index 
+      : isMcq 
+        ? mcqQuestionCount 
+        : 35 + writtenQuestionCount;
+    
+    const baseData = {
       test_id: testId,
-      question_text_uz: questionForm.question_text_uz.trim(),
-      question_text_ru: questionForm.question_text_ru.trim() || null,
-      options: filledOptions,
-      correct_option: questionForm.correct_option,
-      image_url: questionForm.image_url.trim() || null,
-      points: questionForm.points,
-      order_index: editingQuestion ? editingQuestion.order_index : questions.length
+      question_type: questionType,
+      order_index: orderIndex
+    };
+    
+    const questionData = isMcq ? {
+      ...baseData,
+      question_text_uz: mcqForm.question_text_uz.trim(),
+      question_text_ru: mcqForm.question_text_ru.trim() || null,
+      options: mcqForm.options.filter(o => o.trim()),
+      correct_option: mcqForm.correct_option,
+      image_url: mcqForm.image_url.trim() || null,
+      points: mcqForm.points,
+      max_points: mcqForm.points
+    } : {
+      ...baseData,
+      question_text_uz: writtenForm.question_text_uz.trim(),
+      question_text_ru: writtenForm.question_text_ru.trim() || null,
+      model_answer_uz: writtenForm.model_answer_uz.trim(),
+      model_answer_ru: writtenForm.model_answer_ru.trim() || null,
+      rubric_uz: writtenForm.rubric_uz.trim() || null,
+      rubric_ru: writtenForm.rubric_ru.trim() || null,
+      image_url: writtenForm.image_url.trim() || null,
+      max_points: writtenForm.max_points,
+      points: 0,
+      options: [],
+      correct_option: 0
     };
     
     if (editingQuestion) {
       const { error } = await supabase
         .from('questions')
-        .update(questionData)
+        .update(questionData as any)
         .eq('id', editingQuestion.id);
       
       if (error) {
@@ -198,7 +300,7 @@ function TestEditorContent() {
     } else {
       const { data, error } = await supabase
         .from('questions')
-        .insert(questionData)
+        .insert(questionData as any)
         .select()
         .single();
       
@@ -211,7 +313,7 @@ function TestEditorContent() {
     }
     
     setQuestionDialogOpen(false);
-    resetQuestionForm();
+    resetForms();
   };
 
   const handleDeleteQuestion = async () => {
@@ -232,6 +334,9 @@ function TestEditorContent() {
     setDeleteDialogOpen(false);
     setQuestionToDelete(null);
   };
+
+  const mcqQuestions = questions.filter(q => q.question_type === 'single_choice');
+  const writtenQuestions = questions.filter(q => q.question_type === 'written');
 
   if (loading) {
     return (
@@ -260,7 +365,9 @@ function TestEditorContent() {
             </Button>
             <div className="flex-1">
               <h1 className="font-semibold truncate">{test.title_uz}</h1>
-              <p className="text-sm text-muted-foreground">{questions.length} ta savol</p>
+              <p className="text-sm text-muted-foreground">
+                {mcqQuestions.length} test + {writtenQuestions.length} yozma savol
+              </p>
             </div>
             <Dialog open={questionDialogOpen} onOpenChange={setQuestionDialogOpen}>
               <DialogTrigger asChild>
@@ -274,97 +381,123 @@ function TestEditorContent() {
                   <DialogTitle>{editingQuestion ? t('editQuestion') : t('addQuestion')}</DialogTitle>
                   <DialogDescription>Savol ma'lumotlarini kiriting</DialogDescription>
                 </DialogHeader>
+                
+                {/* Question Type Selector */}
+                {!editingQuestion && (
+                  <Tabs value={questionType} onValueChange={(v) => setQuestionType(v as QuestionType)} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="single_choice" className="gap-2">
+                        <CheckSquare className="h-4 w-4" />
+                        Test savoli
+                      </TabsTrigger>
+                      <TabsTrigger value="written" className="gap-2">
+                        <PenLine className="h-4 w-4" />
+                        Yozma savol
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                )}
+                
                 <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>{t('questionText')} (O'zbekcha) *</Label>
-                    <Textarea
-                      value={questionForm.question_text_uz}
-                      onChange={(e) => setQuestionForm({ ...questionForm, question_text_uz: e.target.value })}
-                      placeholder="Savol matnini kiriting..."
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>{t('questionText')} (Ruscha)</Label>
-                    <Textarea
-                      value={questionForm.question_text_ru}
-                      onChange={(e) => setQuestionForm({ ...questionForm, question_text_ru: e.target.value })}
-                      placeholder="Текст вопроса..."
-                      rows={2}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <ImageIcon className="h-4 w-4" />
-                      Rasm URL (ixtiyoriy)
-                    </Label>
-                    <Input
-                      value={questionForm.image_url}
-                      onChange={(e) => setQuestionForm({ ...questionForm, image_url: e.target.value })}
-                      placeholder="https://..."
-                    />
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Label>Javob variantlari *</Label>
-                    {questionForm.options.map((option, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold">
-                          {String.fromCharCode(65 + i)}
-                        </span>
-                        <Input
-                          value={option}
-                          onChange={(e) => {
-                            const newOptions = [...questionForm.options];
-                            newOptions[i] = e.target.value;
-                            setQuestionForm({ ...questionForm, options: newOptions });
-                          }}
-                          placeholder={`${i + 1}-variant`}
-                          className="flex-1"
+                  {questionType === 'single_choice' ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label>{t('questionText')} (O'zbekcha) *</Label>
+                        <Textarea
+                          value={mcqForm.question_text_uz}
+                          onChange={(e) => setMcqForm({ ...mcqForm, question_text_uz: e.target.value })}
+                          placeholder="Savol matnini kiriting..."
+                          rows={3}
                         />
                       </div>
-                    ))}
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>{t('correctOption')}</Label>
-                      <Select
-                        value={questionForm.correct_option.toString()}
-                        onValueChange={(value) => setQuestionForm({ ...questionForm, correct_option: parseInt(value) })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {questionForm.options.map((option, i) => (
-                            option.trim() && (
-                              <SelectItem key={i} value={i.toString()}>
-                                {String.fromCharCode(65 + i)} - {option.slice(0, 30)}...
-                              </SelectItem>
-                            )
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Ball</Label>
-                      <Input
-                        type="number"
-                        value={questionForm.points}
-                        onChange={(e) => setQuestionForm({ ...questionForm, points: parseInt(e.target.value) || 1 })}
-                        min={1}
-                      />
-                    </div>
-                  </div>
+                      
+                      <div className="space-y-2">
+                        <Label>{t('questionText')} (Ruscha)</Label>
+                        <Textarea
+                          value={mcqForm.question_text_ru}
+                          onChange={(e) => setMcqForm({ ...mcqForm, question_text_ru: e.target.value })}
+                          placeholder="Текст вопроса..."
+                          rows={2}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <ImageIcon className="h-4 w-4" />
+                          Rasm URL (ixtiyoriy)
+                        </Label>
+                        <Input
+                          value={mcqForm.image_url}
+                          onChange={(e) => setMcqForm({ ...mcqForm, image_url: e.target.value })}
+                          placeholder="https://..."
+                        />
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label>Javob variantlari *</Label>
+                        {mcqForm.options.map((option, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold">
+                              {String.fromCharCode(65 + i)}
+                            </span>
+                            <Input
+                              value={option}
+                              onChange={(e) => {
+                                const newOptions = [...mcqForm.options];
+                                newOptions[i] = e.target.value;
+                                setMcqForm({ ...mcqForm, options: newOptions });
+                              }}
+                              placeholder={`${i + 1}-variant`}
+                              className="flex-1"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>{t('correctOption')}</Label>
+                          <Select
+                            value={mcqForm.correct_option.toString()}
+                            onValueChange={(value) => setMcqForm({ ...mcqForm, correct_option: parseInt(value) })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {mcqForm.options.map((option, i) => (
+                                option.trim() && (
+                                  <SelectItem key={i} value={i.toString()}>
+                                    {String.fromCharCode(65 + i)} - {option.slice(0, 30)}...
+                                  </SelectItem>
+                                )
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Ball</Label>
+                          <Input
+                            type="number"
+                            value={mcqForm.points}
+                            onChange={(e) => setMcqForm({ ...mcqForm, points: parseInt(e.target.value) || 1 })}
+                            min={1}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <WrittenQuestionForm
+                      form={writtenForm}
+                      onChange={(updates) => setWrittenForm({ ...writtenForm, ...updates })}
+                    />
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => {
                     setQuestionDialogOpen(false);
-                    resetQuestionForm();
+                    resetForms();
                   }}>
                     {t('cancel')}
                   </Button>
@@ -392,69 +525,142 @@ function TestEditorContent() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {questions.map((question, index) => (
-              <Card key={question.id} className="shadow-card hover:shadow-elevated transition-shadow">
-                <CardContent className="py-4">
-                  <div className="flex items-start gap-4">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <GripVertical className="h-5 w-5 cursor-grab" />
-                      <Badge variant="outline" className="font-mono">
-                        #{index + 1}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      {question.image_url && (
-                        <img 
-                          src={question.image_url} 
-                          alt="Question" 
-                          className="max-h-32 rounded-lg border mb-3"
-                        />
-                      )}
-                      <p className="font-medium mb-3">{question.question_text_uz}</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(question.options as string[]).map((option, i) => (
-                          <div
-                            key={i}
-                            className={`px-3 py-2 rounded-lg text-sm border ${
-                              i === question.correct_option 
-                                ? 'border-success bg-success/10 text-success' 
-                                : 'border-muted'
-                            }`}
-                          >
-                            <span className="font-semibold mr-2">{String.fromCharCode(65 + i)}.</span>
-                            {option}
+          <div className="space-y-6">
+            {/* MCQ Questions */}
+            {mcqQuestions.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5" />
+                  Test savollari ({mcqQuestions.length})
+                </h2>
+                {mcqQuestions.map((question, index) => (
+                  <Card key={question.id} className="shadow-card hover:shadow-elevated transition-shadow">
+                    <CardContent className="py-4">
+                      <div className="flex items-start gap-4">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <GripVertical className="h-5 w-5 cursor-grab" />
+                          <Badge variant="outline" className="font-mono">
+                            #{index + 1}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          {question.image_url && (
+                            <img 
+                              src={question.image_url} 
+                              alt="Question" 
+                              className="max-h-32 rounded-lg border mb-3"
+                            />
+                          )}
+                          <p className="font-medium mb-3">{question.question_text_uz}</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {(question.options as string[]).map((option, i) => (
+                              <div
+                                key={i}
+                                className={`px-3 py-2 rounded-lg text-sm border ${
+                                  i === question.correct_option 
+                                    ? 'border-success bg-success/10 text-success' 
+                                    : 'border-muted'
+                                }`}
+                              >
+                                <span className="font-semibold mr-2">{String.fromCharCode(65 + i)}.</span>
+                                {option}
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                          <Badge variant="secondary">{question.points} ball</Badge>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenQuestionDialog(question)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setQuestionToDelete(question);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-1">
-                      <Badge variant="secondary">{question.points} ball</Badge>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleOpenQuestionDialog(question)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setQuestionToDelete(question);
-                          setDeleteDialogOpen(true);
-                        }}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Written Questions */}
+            {writtenQuestions.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <PenLine className="h-5 w-5" />
+                  Yozma savollar ({writtenQuestions.length})
+                </h2>
+                {writtenQuestions.map((question, index) => (
+                  <Card key={question.id} className="shadow-card hover:shadow-elevated transition-shadow border-accent/30">
+                    <CardContent className="py-4">
+                      <div className="flex items-start gap-4">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <GripVertical className="h-5 w-5 cursor-grab" />
+                          <Badge variant="outline" className="font-mono border-accent text-accent">
+                            #{mcqQuestions.length + index + 1}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          {question.image_url && (
+                            <img 
+                              src={question.image_url} 
+                              alt="Question" 
+                              className="max-h-32 rounded-lg border mb-3"
+                            />
+                          )}
+                          <p className="font-medium mb-2">{question.question_text_uz}</p>
+                          {question.model_answer_uz && (
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-medium">Namunaviy javob:</span> {question.model_answer_uz.slice(0, 100)}...
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                          <Badge className="bg-accent text-accent-foreground">
+                            0-{question.max_points || 2} ball
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenQuestionDialog(question)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setQuestionToDelete(question);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
