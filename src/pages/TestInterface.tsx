@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { LanguageProvider, useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
-import { Question, TestAttempt, Test } from '@/types/test';
+import { Question, TestAttempt, Test, WrittenAnswer } from '@/types/test';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { WrittenQuestionInput } from '@/components/test/WrittenQuestionInput';
+import { QuestionNavigator } from '@/components/test/QuestionNavigator';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ChevronLeft, ChevronRight, Clock, Flag, Maximize, Minimize } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Flag, Maximize, Minimize, PenLine, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -40,7 +42,8 @@ function TestInterfaceContent() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [shuffledOptions, setShuffledOptions] = useState<Map<string, { options: string[], mapping: number[] }>>(new Map());
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [mcqAnswers, setMcqAnswers] = useState<Record<string, number>>({});
+  const [writtenAnswers, setWrittenAnswers] = useState<Record<string, WrittenAnswer>>({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
@@ -74,7 +77,8 @@ function TestInterfaceContent() {
       }
       
       setAttempt(attemptData as TestAttempt);
-      setAnswers((attemptData.answers as Record<string, number>) || {});
+      setMcqAnswers((attemptData.answers || {}) as any);
+      setWrittenAnswers((attemptData.written_answers || {}) as any);
       
       // Get test
       const { data: testData } = await supabase
@@ -104,27 +108,35 @@ function TestInterfaceContent() {
       if (questionsData) {
         let processedQuestions = questionsData as Question[];
         
-        // Randomize questions if enabled
+        // For Milliy Sertifikat, keep MCQ questions first (1-35), then written (36-45)
+        const mcqQuestions = processedQuestions.filter(q => q.question_type === 'single_choice');
+        const writtenQuestions = processedQuestions.filter(q => q.question_type === 'written');
+        
+        // Randomize MCQ questions if enabled (keep written questions in order)
         if (testData?.randomize_questions) {
-          processedQuestions = shuffleArray(processedQuestions);
+          processedQuestions = [...shuffleArray(mcqQuestions), ...writtenQuestions];
+        } else {
+          processedQuestions = [...mcqQuestions, ...writtenQuestions];
         }
         
-        // Create shuffled options mapping
+        // Create shuffled options mapping (only for MCQ)
         const optionsMap = new Map<string, { options: string[], mapping: number[] }>();
         processedQuestions.forEach((q) => {
-          const options = q.options as string[];
-          if (testData?.randomize_options) {
-            const indices = options.map((_, i) => i);
-            const shuffledIndices = shuffleArray(indices);
-            optionsMap.set(q.id, {
-              options: shuffledIndices.map(i => options[i]),
-              mapping: shuffledIndices
-            });
-          } else {
-            optionsMap.set(q.id, {
-              options: options,
-              mapping: options.map((_, i) => i)
-            });
+          if (q.question_type === 'single_choice') {
+            const options = q.options as string[];
+            if (testData?.randomize_options) {
+              const indices = options.map((_, i) => i);
+              const shuffledIndices = shuffleArray(indices);
+              optionsMap.set(q.id, {
+                options: shuffledIndices.map(i => options[i]),
+                mapping: shuffledIndices
+              });
+            } else {
+              optionsMap.set(q.id, {
+                options: options,
+                mapping: options.map((_, i) => i)
+              });
+            }
           }
         });
         
@@ -161,10 +173,13 @@ function TestInterfaceContent() {
   // Auto-save every 5 seconds
   useEffect(() => {
     autoSaveRef.current = setInterval(() => {
-      if (attemptId && Object.keys(answers).length > 0) {
+      if (attemptId && (Object.keys(mcqAnswers).length > 0 || Object.keys(writtenAnswers).length > 0)) {
         supabase
           .from('test_attempts')
-          .update({ answers })
+          .update({ 
+            answers: mcqAnswers as any,
+            written_answers: writtenAnswers as any
+          })
           .eq('id', attemptId)
           .then(() => {});
       }
@@ -175,7 +190,7 @@ function TestInterfaceContent() {
         clearInterval(autoSaveRef.current);
       }
     };
-  }, [attemptId, answers]);
+  }, [attemptId, mcqAnswers, writtenAnswers]);
 
   // Fullscreen handling
   const toggleFullscreen = useCallback(() => {
@@ -212,7 +227,11 @@ function TestInterfaceContent() {
     
     // Map display index back to original index
     const originalIndex = optionData.mapping[displayIndex];
-    setAnswers((prev) => ({ ...prev, [questionId]: originalIndex }));
+    setMcqAnswers((prev) => ({ ...prev, [questionId]: originalIndex }));
+  };
+
+  const handleWrittenAnswerChange = (questionId: string, answer: WrittenAnswer) => {
+    setWrittenAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
 
   const handleFinish = async (autoSubmit = false) => {
@@ -225,11 +244,12 @@ function TestInterfaceContent() {
     
     setSubmitting(true);
     
-    // Calculate score
-    let correctCount = 0;
-    questions.forEach((q) => {
-      if (answers[q.id] === q.correct_option) {
-        correctCount++;
+    // Calculate MCQ score
+    let mcqCorrectCount = 0;
+    const mcqQuestions = questions.filter(q => q.question_type === 'single_choice');
+    mcqQuestions.forEach((q) => {
+      if (mcqAnswers[q.id] === q.correct_option) {
+        mcqCorrectCount++;
       }
     });
     
@@ -239,11 +259,27 @@ function TestInterfaceContent() {
         .update({
           status: 'finished',
           finished_at: new Date().toISOString(),
-          score: correctCount,
-          correct_answers: correctCount,
-          answers
+          mcq_score: mcqCorrectCount,
+          correct_answers: mcqCorrectCount,
+          answers: mcqAnswers as any,
+          written_answers: writtenAnswers as any,
+          evaluation_status: questions.some(q => q.question_type === 'written') ? 'pending' : 'completed'
         })
         .eq('id', attemptId);
+      
+      // Trigger AI evaluation for written questions if any
+      const writtenQuestions = questions.filter(q => q.question_type === 'written');
+      if (writtenQuestions.length > 0) {
+        // Call evaluation edge function (async, don't wait)
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evaluate-written-answers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+          },
+          body: JSON.stringify({ attempt_id: attemptId })
+        }).catch(err => console.error('Evaluation trigger error:', err));
+      }
       
       if (document.fullscreenElement) {
         document.exitFullscreen();
@@ -263,10 +299,14 @@ function TestInterfaceContent() {
   };
 
   const currentQuestion = questions[currentIndex];
-  const currentOptions = currentQuestion ? shuffledOptions.get(currentQuestion.id) : null;
-  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
-  const currentDisplayAnswer = currentAnswer !== undefined && currentOptions 
-    ? currentOptions.mapping.indexOf(currentAnswer)
+  const currentOptions = currentQuestion?.question_type === 'single_choice' 
+    ? shuffledOptions.get(currentQuestion.id) 
+    : null;
+  const currentMcqAnswer = currentQuestion?.question_type === 'single_choice' 
+    ? mcqAnswers[currentQuestion.id] 
+    : undefined;
+  const currentDisplayAnswer = currentMcqAnswer !== undefined && currentOptions 
+    ? currentOptions.mapping.indexOf(currentMcqAnswer)
     : undefined;
 
   const questionText = currentQuestion ? (
@@ -275,8 +315,14 @@ function TestInterfaceContent() {
     currentQuestion.question_text_uz
   ) : '';
 
-  const answeredCount = Object.keys(answers).length;
-  const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
+  const mcqCount = questions.filter(q => q.question_type === 'single_choice').length;
+  const writtenCount = questions.filter(q => q.question_type === 'written').length;
+  const answeredMcq = Object.keys(mcqAnswers).length;
+  const answeredWritten = Object.keys(writtenAnswers).filter(
+    k => writtenAnswers[k]?.answer_a?.trim() || writtenAnswers[k]?.answer_b?.trim()
+  ).length;
+  const totalAnswered = answeredMcq + answeredWritten;
+  const progress = questions.length > 0 ? (totalAnswered / questions.length) * 100 : 0;
 
   if (loading) {
     return (
@@ -297,6 +343,11 @@ function TestInterfaceContent() {
                 <Clock className="h-4 w-4 mr-1.5" />
                 {formatTime(timeLeft)}
               </Badge>
+              {test?.test_format === 'milliy_sertifikat' && (
+                <Badge variant="outline" className="hidden sm:flex">
+                  Milliy Sertifikat
+                </Badge>
+              )}
             </div>
             
             <div className="flex-1 max-w-xs hidden sm:block">
@@ -324,39 +375,37 @@ function TestInterfaceContent() {
       {/* Question navigation */}
       <div className="border-b bg-card/50">
         <div className="test-container py-3">
-          <div className="flex gap-1.5 overflow-x-auto pb-1">
-            {questions.map((q, i) => (
-              <button
-                key={q.id}
-                onClick={() => setCurrentIndex(i)}
-                className={`
-                  shrink-0 w-9 h-9 rounded-lg text-sm font-medium transition-all
-                  ${i === currentIndex 
-                    ? 'gradient-primary text-primary-foreground shadow-soft' 
-                    : answers[q.id] !== undefined
-                      ? 'bg-success/20 text-success border border-success/30'
-                      : 'bg-muted hover:bg-muted/80'
-                  }
-                `}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
+          <QuestionNavigator
+            questions={questions}
+            currentIndex={currentIndex}
+            mcqAnswers={mcqAnswers}
+            writtenAnswers={writtenAnswers}
+            onNavigate={setCurrentIndex}
+          />
         </div>
       </div>
 
       {/* Main content */}
       <main className="flex-1 py-6">
         <div className="test-container">
-          {currentQuestion && currentOptions && (
+          {currentQuestion && (
             <Card className="shadow-card animate-fade-in">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Badge variant="outline" className="font-medium">
                     {t('question')} {currentIndex + 1} {t('of')} {questions.length}
                   </Badge>
-                  <Badge variant="secondary">{currentQuestion.points} ball</Badge>
+                  {currentQuestion.question_type === 'single_choice' ? (
+                    <Badge variant="secondary" className="gap-1">
+                      <CheckSquare className="h-3 w-3" />
+                      {currentQuestion.points} ball
+                    </Badge>
+                  ) : (
+                    <Badge variant="default" className="gap-1 bg-accent text-accent-foreground">
+                      <PenLine className="h-3 w-3" />
+                      0-{currentQuestion.max_points || 2} ball
+                    </Badge>
+                  )}
                 </div>
                 
                 {currentQuestion.image_url && (
@@ -373,26 +422,38 @@ function TestInterfaceContent() {
                   {questionText}
                 </p>
                 
-                <div className="space-y-3">
-                  {currentOptions.options.map((option, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSelectOption(currentQuestion.id, i)}
-                      className={`
-                        w-full p-4 rounded-lg border-2 text-left transition-all
-                        ${currentDisplayAnswer === i 
-                          ? 'border-primary bg-primary/5 shadow-soft' 
-                          : 'border-muted hover:border-primary/50 hover:bg-muted/50'
-                        }
-                      `}
-                    >
-                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted font-semibold mr-3">
-                        {String.fromCharCode(65 + i)}
-                      </span>
-                      {option}
-                    </button>
-                  ))}
-                </div>
+                {/* MCQ Options */}
+                {currentQuestion.question_type === 'single_choice' && currentOptions && (
+                  <div className="space-y-3">
+                    {currentOptions.options.map((option, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSelectOption(currentQuestion.id, i)}
+                        className={`
+                          w-full p-4 rounded-lg border-2 text-left transition-all
+                          ${currentDisplayAnswer === i 
+                            ? 'border-primary bg-primary/5 shadow-soft' 
+                            : 'border-muted hover:border-primary/50 hover:bg-muted/50'
+                          }
+                        `}
+                      >
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted font-semibold mr-3">
+                          {String.fromCharCode(65 + i)}
+                        </span>
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Written Question Input */}
+                {currentQuestion.question_type === 'written' && (
+                  <WrittenQuestionInput
+                    questionId={currentQuestion.id}
+                    answer={writtenAnswers[currentQuestion.id]}
+                    onChange={handleWrittenAnswerChange}
+                  />
+                )}
               </CardContent>
             </Card>
           )}
@@ -440,8 +501,16 @@ function TestInterfaceContent() {
               {t('confirmFinish')}
               <br />
               <span className="font-medium">
-                {answeredCount}/{questions.length} ta savolga javob berildi
+                Test savollari: {answeredMcq}/{mcqCount} ta javob berildi
               </span>
+              {writtenCount > 0 && (
+                <>
+                  <br />
+                  <span className="font-medium">
+                    Yozma savollar: {answeredWritten}/{writtenCount} ta javob berildi
+                  </span>
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

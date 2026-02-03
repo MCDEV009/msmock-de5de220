@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Settings, LogIn } from 'lucide-react';
+import { GraduationCap, Settings, LogIn } from 'lucide-react';
 
 export function Header() {
   const { t } = useLanguage();
@@ -14,9 +14,12 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary shadow-soft group-hover:shadow-glow transition-shadow">
-              <BookOpen className="h-5 w-5 text-primary-foreground" />
+              <GraduationCap className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg tracking-tight">TestHub</span>
+            <div className="flex flex-col">
+              <span className="font-bold text-lg tracking-tight leading-tight">Milliy Sertifikat</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">Mock Platform</span>
+            </div>
           </Link>
 
           <div className="flex items-center gap-2">

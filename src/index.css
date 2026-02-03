@@ -160,6 +160,13 @@
     background: var(--gradient-card);
   }
 
+  .gradient-text {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   .shadow-soft {
     box-shadow: var(--shadow-soft);
   }

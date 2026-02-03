@@ -101,11 +101,12 @@ function AdminContent() {
     description_uz: '',
     subject_id: '',
     visibility: 'public' as 'public' | 'private',
-    duration_minutes: 30,
+    duration_minutes: 120,
     allow_retry: false,
     randomize_questions: true,
     randomize_options: true,
-    negative_marking: false
+    negative_marking: false,
+    test_format: 'standard' as 'standard' | 'milliy_sertifikat'
   });
   
   // Questions state
@@ -270,11 +271,12 @@ function AdminContent() {
         description_uz: '',
         subject_id: '',
         visibility: 'public',
-        duration_minutes: 30,
+        duration_minutes: 120,
         allow_retry: false,
         randomize_questions: true,
         randomize_options: true,
-        negative_marking: false
+        negative_marking: false,
+        test_format: 'standard'
       });
       // Refresh tests
       window.location.reload();
@@ -697,6 +699,29 @@ function AdminContent() {
                             </SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Test formati</Label>
+                        <Select
+                          value={testForm.test_format}
+                          onValueChange={(value: 'standard' | 'milliy_sertifikat') => setTestForm({ ...testForm, test_format: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="standard">
+                              Oddiy test
+                            </SelectItem>
+                            <SelectItem value="milliy_sertifikat">
+                              Milliy Sertifikat (35 test + 10 yozma)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Milliy Sertifikat formatida 35 ta test savoli va 10 ta yozma savol bo'ladi
+                        </p>
                       </div>
                       
                       <div className="space-y-4 pt-4 border-t">

@@ -4,7 +4,8 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { ArrowRight, Lock, Sparkles } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowRight, Lock, GraduationCap, FileQuestion, PenLine, CheckCircle } from 'lucide-react';
 
 export function HeroSection() {
   const { t } = useLanguage();
@@ -26,19 +27,36 @@ export function HeroSection() {
       </div>
 
       <div className="test-container">
-        <div className="mx-auto max-w-3xl text-center animate-fade-in">
+        <div className="mx-auto max-w-4xl text-center animate-fade-in">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-            <Sparkles className="h-4 w-4" />
-            Online Test Platformasi
+            <GraduationCap className="h-4 w-4" />
+            Milliy Sertifikat Mock Test Platformasi
           </div>
 
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl mb-6 text-balance">
-            {t('heroTitle')}
+            O'zbekiston Milliy Sertifikat <br />
+            <span className="gradient-text">Mock Imtihon</span>
           </h1>
 
-          <p className="text-xl text-muted-foreground mb-10 text-balance">
-            {t('heroSubtitle')}
+          <p className="text-xl text-muted-foreground mb-8 text-balance max-w-2xl mx-auto">
+            Haqiqiy imtihon formatida tayyorlaning. 35 ta test savoli va 10 ta yozma savol bilan to'liq formatda mashq qiling.
           </p>
+
+          {/* Features */}
+          <div className="flex flex-wrap justify-center gap-3 mb-10">
+            <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-sm">
+              <FileQuestion className="h-4 w-4" />
+              35 test savoli
+            </Badge>
+            <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-sm">
+              <PenLine className="h-4 w-4" />
+              10 yozma savol
+            </Badge>
+            <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-sm">
+              <CheckCircle className="h-4 w-4" />
+              AI baholash
+            </Badge>
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Button
