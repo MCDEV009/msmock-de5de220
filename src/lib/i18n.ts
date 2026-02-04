@@ -10,8 +10,8 @@ export const translations = {
     logout: 'Chiqish',
     
     // Home page
-    heroTitle: 'Bilimingizni sinab ko\'ring',
-    heroSubtitle: 'Onlayn test platformasi - tez va oson',
+    heroTitle: 'Milliy Sertifikat Mock Platformasi',
+    heroSubtitle: 'Haqiqiy imtihon formatida mashq qiling',
     startTest: 'Testni boshlash',
     enterTestCode: 'Test kodini kiriting',
     publicTests: 'Ochiq testlar',
@@ -93,6 +93,18 @@ export const translations = {
     strengths: 'Kuchli tomonlar',
     missingPoints: 'Yetishmayotgan jihatlar',
     
+    // AI Generator
+    aiGenerator: 'AI Savol Generatori',
+    generateQuestions: 'Savollar yaratish',
+    generating: 'Yaratilmoqda...',
+    selectSubject: 'Fanni tanlang',
+    questionType: 'Savol turi',
+    difficulty: 'Qiyinlik darajasi',
+    easy: 'Oson',
+    medium: 'O\'rta',
+    hard: 'Qiyin',
+    topic: 'Mavzu',
+    
     // Status
     inProgress: 'Jarayonda',
     finished: 'Tugatildi',
@@ -103,6 +115,7 @@ export const translations = {
     testNotFound: 'Test topilmadi',
     invalidCode: 'Noto\'g\'ri kod',
     alreadyFinished: 'Test allaqachon yakunlangan',
+    adminOnly: 'Faqat administratorlar uchun',
     
     // Analytics
     totalTests: 'Jami testlar',

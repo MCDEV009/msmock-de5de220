@@ -2,11 +2,22 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import { Button } from '@/components/ui/button';
-import { GraduationCap, Settings, LogIn } from 'lucide-react';
+import { GraduationCap, LogIn, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 export function Header() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+
+  const handleAuth = () => {
+    if (user) {
+      signOut();
+      navigate('/');
+    } else {
+      navigate('/auth');
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 glass border-b">
@@ -24,23 +35,29 @@ export function Header() {
 
           <div className="flex items-center gap-2">
             <LanguageSelector />
+            {user && (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-sm">
+                <User className="h-4 w-4" />
+                <span className="truncate max-w-[120px]">{user.email}</span>
+              </div>
+            )}
             <Button
-              variant="ghost"
+              variant={user ? "outline" : "default"}
               size="sm"
-              onClick={() => navigate('/admin')}
-              className="gap-2"
+              onClick={handleAuth}
+              className={user ? "gap-2" : "gap-2 gradient-primary border-0 shadow-soft hover:shadow-glow transition-shadow"}
             >
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('admin')}</span>
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => navigate('/auth')}
-              className="gap-2 gradient-primary border-0 shadow-soft hover:shadow-glow transition-shadow"
-            >
-              <LogIn className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('login')}</span>
+              {user ? (
+                <>
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t('logout')}</span>
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t('login')}</span>
+                </>
+              )}
             </Button>
           </div>
         </div>

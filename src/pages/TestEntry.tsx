@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { ArrowRight, User, Clock, FileQuestion, Copy, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ExamRulesModal } from '@/components/test/ExamRulesModal';
+import { ArrowRight, User, Clock, FileQuestion, Copy, CheckCircle, Award } from 'lucide-react';
 import { toast } from 'sonner';
 
 function generateParticipantId(): string {
@@ -32,6 +34,7 @@ function TestEntryContent() {
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
+  const [showRulesModal, setShowRulesModal] = useState(false);
 
   useEffect(() => {
     async function fetchTest() {
@@ -67,6 +70,14 @@ function TestEntryContent() {
     setCopied(true);
     toast.success("ID nusxalandi!");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleProceed = () => {
+    if (!fullName.trim()) {
+      toast.error(t('enterFullName'));
+      return;
+    }
+    setShowRulesModal(true);
   };
 
   const handleStartTest = async () => {
@@ -149,6 +160,14 @@ function TestEntryContent() {
       <main className="flex-1 flex items-center justify-center p-4">
         <Card className="max-w-lg w-full shadow-elevated animate-scale-in">
           <CardHeader className="text-center pb-2">
+            <div className="flex justify-center mb-2">
+              {test.test_format === 'milliy_sertifikat' && (
+                <Badge variant="default" className="gap-1">
+                  <Award className="h-3 w-3" />
+                  Milliy Sertifikat
+                </Badge>
+              )}
+            </div>
             <CardTitle className="text-2xl">{title}</CardTitle>
             <CardDescription className="flex items-center justify-center gap-4 mt-2">
               <span className="flex items-center gap-1">
@@ -160,6 +179,11 @@ function TestEntryContent() {
                 {questionCount} {t('questions')}
               </span>
             </CardDescription>
+            {test.test_format === 'milliy_sertifikat' && (
+              <p className="text-xs text-muted-foreground mt-2">
+                1-35: Test savollari (1 ball) • 36-45: Yozma savollar (0-2 ball)
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-6 pt-4">
             <div className="space-y-2">
@@ -173,6 +197,7 @@ function TestEntryContent() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="text-lg"
+                onKeyDown={(e) => e.key === 'Enter' && handleProceed()}
               />
             </div>
 
@@ -199,7 +224,7 @@ function TestEntryContent() {
             </div>
 
             <Button
-              onClick={handleStartTest}
+              onClick={handleProceed}
               disabled={!fullName.trim() || submitting}
               className="w-full h-12 text-lg gradient-primary border-0 shadow-soft hover:shadow-glow transition-shadow"
             >
@@ -209,6 +234,15 @@ function TestEntryContent() {
           </CardContent>
         </Card>
       </main>
+
+      <ExamRulesModal
+        open={showRulesModal}
+        onAccept={handleStartTest}
+        testTitle={title}
+        duration={test.duration_minutes}
+        questionCount={questionCount}
+        isMilliySertifikat={test.test_format === 'milliy_sertifikat'}
+      />
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LanguageProvider, useLanguage } from '@/hooks/useLanguage';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Test, Subject, Question } from '@/types/test';
-import { User, Session } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -73,9 +73,8 @@ import { toast } from 'sonner';
 function AdminContent() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
+  const { user, signOut } = useAuth();
   
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'tests' | 'analytics' | 'settings'>('dashboard');
   
@@ -126,32 +125,6 @@ function AdminContent() {
     averageScore: 0,
     successRate: 0
   });
-
-  // Auth check
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (!session) {
-          navigate('/auth');
-        }
-      }
-    );
-    
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (!session) {
-        navigate('/auth');
-      }
-      setLoading(false);
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [navigate]);
 
   // Fetch data
   useEffect(() => {
@@ -239,7 +212,7 @@ function AdminContent() {
   }, [user]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     navigate('/');
   };
 
