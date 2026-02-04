@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { LanguageProvider, useLanguage } from '@/hooks/useLanguage';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, Lock, User, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Mail, Lock, User, Loader2, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -17,13 +19,31 @@ const passwordSchema = z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo\'
 
 function AuthContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  // Check for admin-required redirect
+  const state = location.state as { adminRequired?: boolean; notAuthorized?: boolean } | null;
+  const adminRequired = state?.adminRequired;
+  const notAuthorized = state?.notAuthorized;
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (adminRequired && isAdmin) {
+        navigate('/admin');
+      } else if (!adminRequired) {
+        navigate('/');
+      }
+    }
+  }, [user, isAdmin, authLoading, adminRequired, navigate]);
 
   const validateInputs = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -60,12 +80,11 @@ function AuthContent() {
       } else {
         toast.error(error.message);
       }
+      setLoading(false);
     } else {
       toast.success('Muvaffaqiyatli kirdingiz!');
-      navigate('/admin');
+      // Redirect will happen via useEffect
     }
-    
-    setLoading(false);
   };
 
   const handleSignup = async () => {
@@ -110,9 +129,29 @@ function AuthContent() {
         <Card className="max-w-md w-full shadow-elevated">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">{t('login')}</CardTitle>
-            <CardDescription>Admin paneliga kirish uchun</CardDescription>
+            <CardDescription>
+              {adminRequired ? 'Admin paneliga kirish uchun' : 'Hisobingizga kiring yoki ro\'yxatdan o\'ting'}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {notAuthorized && (
+              <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertDescription>
+                  Faqat administratorlar uchun. Sizda admin huquqlari yo'q.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {adminRequired && !notAuthorized && (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Admin paneliga kirish uchun tizimga kiring.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Kirish</TabsTrigger>
@@ -132,6 +171,7 @@ function AuthContent() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={errors.email ? 'border-destructive' : ''}
+                    onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   />
                   {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                 </div>
@@ -148,6 +188,7 @@ function AuthContent() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className={errors.password ? 'border-destructive' : ''}
+                    onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   />
                   {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                 </div>

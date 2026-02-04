@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LanguageProvider, useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
-import { Test, Question } from '@/types/test';
-import { User, Session } from '@supabase/supabase-js';
+import { Test, Question, Subject } from '@/types/test';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WrittenQuestionForm } from '@/components/admin/WrittenQuestionForm';
+import { AIQuestionGenerator } from '@/components/admin/AIQuestionGenerator';
 import {
   Dialog,
   DialogContent,
@@ -47,7 +47,8 @@ import {
   Image as ImageIcon,
   Save,
   CheckSquare,
-  PenLine
+  PenLine,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -78,11 +79,11 @@ function TestEditorContent() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [test, setTest] = useState<Test | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
   
   const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -110,61 +111,46 @@ function TestEditorContent() {
     image_url: ''
   });
 
-  // Auth check
+  // Fetch test, questions, and subjects
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (!session) {
-          navigate('/auth');
-        }
-      }
-    );
-    
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (!session) {
-        navigate('/auth');
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  // Fetch test and questions
-  useEffect(() => {
-    if (!testId || !user) return;
+    if (!testId) return;
     
     async function fetchData() {
-      const { data: testData } = await supabase
-        .from('tests')
-        .select('*')
-        .eq('id', testId)
-        .single();
+      const [testResult, questionsResult, subjectsResult] = await Promise.all([
+        supabase.from('tests').select('*').eq('id', testId).single(),
+        supabase.from('questions').select('*').eq('test_id', testId).order('order_index'),
+        supabase.from('subjects').select('*').order('name_uz')
+      ]);
       
-      if (testData) {
-        setTest(testData as Test);
+      if (testResult.data) {
+        setTest(testResult.data as Test);
       }
       
-      const { data: questionsData } = await supabase
-        .from('questions')
-        .select('*')
-        .eq('test_id', testId)
-        .order('order_index');
+      if (questionsResult.data) {
+        setQuestions(questionsResult.data as Question[]);
+      }
       
-      if (questionsData) {
-        setQuestions(questionsData as Question[]);
+      if (subjectsResult.data) {
+        setSubjects(subjectsResult.data as Subject[]);
       }
       
       setLoading(false);
     }
     
     fetchData();
-  }, [testId, user]);
+  }, [testId]);
+
+  const refreshQuestions = async () => {
+    const { data } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('test_id', testId)
+      .order('order_index');
+    
+    if (data) {
+      setQuestions(data as Question[]);
+    }
+  };
 
   const resetForms = () => {
     setMcqForm({
@@ -513,18 +499,45 @@ function TestEditorContent() {
       </header>
 
       {/* Questions list */}
-      <main className="test-container py-8">
-        {questions.length === 0 ? (
+      <main className="test-container py-8 space-y-6">
+        {/* AI Generator Toggle */}
+        <div className="flex justify-end">
+          <Button
+            variant={showAIGenerator ? "secondary" : "outline"}
+            onClick={() => setShowAIGenerator(!showAIGenerator)}
+            className="gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            {showAIGenerator ? 'AI Generatorni yopish' : 'AI bilan savol yaratish'}
+          </Button>
+        </div>
+
+        {/* AI Question Generator */}
+        {showAIGenerator && (
+          <AIQuestionGenerator
+            testId={testId!}
+            subjects={subjects}
+            onQuestionsAdded={refreshQuestions}
+          />
+        )}
+
+        {questions.length === 0 && !showAIGenerator ? (
           <Card className="shadow-card">
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground mb-4">Hozircha savollar yo'q</p>
-              <Button onClick={() => handleOpenQuestionDialog()} className="gap-2 gradient-primary border-0">
-                <Plus className="h-4 w-4" />
-                Birinchi savolni qo'shing
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button onClick={() => handleOpenQuestionDialog()} className="gap-2 gradient-primary border-0">
+                  <Plus className="h-4 w-4" />
+                  Qo'lda qo'shish
+                </Button>
+                <Button onClick={() => setShowAIGenerator(true)} variant="outline" className="gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  AI bilan yaratish
+                </Button>
+              </div>
             </CardContent>
           </Card>
-        ) : (
+        ) : questions.length > 0 && (
           <div className="space-y-6">
             {/* MCQ Questions */}
             {mcqQuestions.length > 0 && (
