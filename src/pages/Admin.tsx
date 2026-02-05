@@ -76,10 +76,10 @@ import { toast } from 'sonner';
 function AdminContent() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
    const { theme, setTheme } = useTheme();
   
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'tests' | 'analytics' | 'settings'>('dashboard');
   
   // Tests state
@@ -399,7 +399,7 @@ function AdminContent() {
     currentPage * testsPerPage
   );
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">{t('loading')}</div>
