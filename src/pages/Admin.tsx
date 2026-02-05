@@ -66,14 +66,18 @@ import {
   Upload,
   BookOpen,
   ChevronLeft,
-  ChevronRight
+   ChevronRight,
+   Moon,
+   Sun
 } from 'lucide-react';
 import { toast } from 'sonner';
+ import { useTheme } from 'next-themes';
 
 function AdminContent() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { user, signOut } = useAuth();
+   const { theme, setTheme } = useTheme();
   
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'tests' | 'analytics' | 'settings'>('dashboard');
@@ -412,11 +416,20 @@ function AdminContent() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
               <BookOpen className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold">TestHub Admin</span>
+             <span className="font-bold text-sidebar-foreground">TestHub Admin</span>
           </div>
         </div>
         
         <nav className="flex-1 p-4 space-y-1">
+           {/* Theme Toggle */}
+           <button
+             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-sidebar-foreground hover:bg-sidebar-accent/50 mb-2"
+           >
+             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+             {theme === 'dark' ? t('lightMode') : t('darkMode')}
+           </button>
+           
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors

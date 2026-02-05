@@ -1,9 +1,10 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useLanguage } from '@/hooks/useLanguage';
-import { LanguageSelector } from '@/components/ui/LanguageSelector';
-import { Button } from '@/components/ui/button';
-import { GraduationCap, LogIn, LogOut, User } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+ import { Link, useNavigate } from 'react-router-dom';
+ import { useLanguage } from '@/hooks/useLanguage';
+ import { LanguageSelector } from '@/components/ui/LanguageSelector';
+ import { ThemeToggle } from '@/components/ui/ThemeToggle';
+ import { Button } from '@/components/ui/button';
+ import { GraduationCap, LogIn, LogOut, User } from 'lucide-react';
+ import { useAuth } from '@/hooks/useAuth';
 
 export function Header() {
   const { t } = useLanguage();
@@ -34,6 +35,7 @@ export function Header() {
           </Link>
 
           <div className="flex items-center gap-2">
+             <ThemeToggle />
             <LanguageSelector />
             {user && (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-sm">

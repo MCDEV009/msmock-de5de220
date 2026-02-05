@@ -128,6 +128,12 @@ export const translations = {
     
     // Minutes
     minutes: 'daqiqa',
+     
+     // Theme
+     toggleTheme: 'Rejimni almashtirish',
+     lightMode: 'Yorug\'',
+     darkMode: 'Qorong\'u',
+     systemMode: 'Tizim',
   },
   ru: {
     home: 'Главная',
@@ -207,6 +213,36 @@ export const translations = {
     successRate: 'Успеваемость',
     loading: 'Загрузка...',
     minutes: 'минут',
+     
+     // Written questions
+     writtenQuestion: 'Письменный вопрос',
+     modelAnswer: 'Образец ответа',
+     rubric: 'Критерии оценки',
+     answerA: 'Ответ A',
+     answerB: 'Ответ B',
+     aiEvaluation: 'Оценка ИИ',
+     evaluating: 'Оценивается',
+     strengths: 'Сильные стороны',
+     missingPoints: 'Недостающие аспекты',
+     
+     // AI Generator
+     aiGenerator: 'AI Генератор вопросов',
+     generateQuestions: 'Генерировать вопросы',
+     generating: 'Генерация...',
+     selectSubject: 'Выберите предмет',
+     questionType: 'Тип вопроса',
+     difficulty: 'Сложность',
+     easy: 'Лёгкий',
+     medium: 'Средний',
+     hard: 'Сложный',
+     topic: 'Тема',
+     adminOnly: 'Только для администраторов',
+     
+     // Theme
+     toggleTheme: 'Переключить тему',
+     lightMode: 'Светлая',
+     darkMode: 'Тёмная',
+     systemMode: 'Системная',
   },
   en: {
     home: 'Home',
@@ -286,6 +322,36 @@ export const translations = {
     successRate: 'Success Rate',
     loading: 'Loading...',
     minutes: 'minutes',
+     
+     // Written questions
+     writtenQuestion: 'Written Question',
+     modelAnswer: 'Model Answer',
+     rubric: 'Rubric',
+     answerA: 'Answer A',
+     answerB: 'Answer B',
+     aiEvaluation: 'AI Evaluation',
+     evaluating: 'Evaluating',
+     strengths: 'Strengths',
+     missingPoints: 'Missing Points',
+     
+     // AI Generator
+     aiGenerator: 'AI Question Generator',
+     generateQuestions: 'Generate Questions',
+     generating: 'Generating...',
+     selectSubject: 'Select Subject',
+     questionType: 'Question Type',
+     difficulty: 'Difficulty',
+     easy: 'Easy',
+     medium: 'Medium',
+     hard: 'Hard',
+     topic: 'Topic',
+     adminOnly: 'Admin only',
+     
+     // Theme
+     toggleTheme: 'Toggle theme',
+     lightMode: 'Light',
+     darkMode: 'Dark',
+     systemMode: 'System',
   },
   qq: {
     home: 'Bas bet',
@@ -365,6 +431,36 @@ export const translations = {
     successRate: 'Tabıs dárejesi',
     loading: 'Júklenбақта...',
     minutes: 'minut',
+     
+     // Written questions
+     writtenQuestion: 'Jazba soraw',
+     modelAnswer: 'Úlgi juwap',
+     rubric: 'Bahalaw ólshemleri',
+     answerA: 'Juwap A',
+     answerB: 'Juwap B',
+     aiEvaluation: 'AI bahalawı',
+     evaluating: 'Bahalanıwda',
+     strengths: 'Gúshli tárepler',
+     missingPoints: 'Jetispeytuǵın tárepler',
+     
+     // AI Generator
+     aiGenerator: 'AI Soraw Generatorı',
+     generateQuestions: 'Sorawlar jaratıw',
+     generating: 'Jaratılıwda...',
+     selectSubject: 'Pándi tańlań',
+     questionType: 'Soraw túri',
+     difficulty: 'Qıyınlıq dárejesi',
+     easy: 'Jeńil',
+     medium: 'Orta',
+     hard: 'Qıyın',
+     topic: 'Tema',
+     adminOnly: 'Tek administratorlar ushın',
+     
+     // Theme
+     toggleTheme: 'Rejimdi almastırıw',
+     lightMode: 'Jarıq',
+     darkMode: 'Qarańǵı',
+     systemMode: 'Sistema',
   },
 };
 
