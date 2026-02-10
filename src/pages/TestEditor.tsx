@@ -346,7 +346,7 @@ function TestEditorContent() {
       <header className="sticky top-0 z-50 glass border-b">
         <div className="test-container">
           <div className="flex h-16 items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/urecheater')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex-1">

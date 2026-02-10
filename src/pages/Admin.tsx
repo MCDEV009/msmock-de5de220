@@ -803,7 +803,7 @@ function AdminContent() {
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      onClick={() => navigate(`/admin/test/${test.id}`)}
+                                      onClick={() => navigate(`/urecheater/test/${test.id}`)}
                                       title="Savollarni tahrirlash"
                                     >
                                       <Edit className="h-4 w-4" />

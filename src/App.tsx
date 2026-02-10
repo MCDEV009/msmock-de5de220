@@ -37,12 +37,12 @@ const App = () => (
             <Route path="/test/:attemptId" element={<TestInterface />} />
             <Route path="/results/:attemptId" element={<Results />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/admin" element={
+            <Route path="/urecheater" element={
               <ProtectedRoute requireAdmin>
                 <Admin />
               </ProtectedRoute>
             } />
-            <Route path="/admin/test/:testId" element={
+            <Route path="/urecheater/test/:testId" element={
               <ProtectedRoute requireAdmin>
                 <TestEditor />
               </ProtectedRoute>
