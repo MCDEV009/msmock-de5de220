@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useAuth } from '@/hooks/useAuth';
 import { Test } from '@/types/test';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,15 @@ interface TestCardProps {
 export function TestCard({ test, questionCount = 0 }: TestCardProps) {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleStartTest = () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    navigate(`/enter/${test.id}`);
+  };
 
   const title = language === 'ru' && test.title_ru ? test.title_ru :
                 language === 'en' && test.title_en ? test.title_en : test.title_uz;
@@ -50,7 +60,7 @@ export function TestCard({ test, questionCount = 0 }: TestCardProps) {
       </CardContent>
       <CardFooter>
         <Button 
-          onClick={() => navigate(`/enter/${test.id}`)}
+          onClick={handleStartTest}
           className="w-full gradient-primary border-0 shadow-soft group-hover:shadow-glow transition-shadow"
         >
           {t('startTest')}
