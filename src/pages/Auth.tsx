@@ -40,7 +40,7 @@ function AuthContent() {
       if (adminRequired && isAdmin) {
         navigate('/admin');
       } else if (!adminRequired) {
-        navigate('/');
+        navigate('/dashboard');
       }
     }
   }, [user, isAdmin, authLoading, adminRequired, navigate]);

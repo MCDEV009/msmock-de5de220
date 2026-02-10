@@ -13,6 +13,7 @@ import Results from "./pages/Results";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import TestEditor from "./pages/TestEditor";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,11 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/tests" element={<TestsPage />} />
             <Route path="/enter/:testId" element={<TestEntry />} />
             <Route path="/test/:attemptId" element={<TestInterface />} />
