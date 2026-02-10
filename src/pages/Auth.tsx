@@ -38,7 +38,7 @@ function AuthContent() {
   useEffect(() => {
     if (!authLoading && user) {
       if (adminRequired && isAdmin) {
-        navigate('/admin');
+        navigate('/urecheater');
       } else if (!adminRequired) {
         navigate('/dashboard');
       }
