@@ -25,7 +25,7 @@ export function TestCard({ test, questionCount = 0 }: TestCardProps) {
 
   return (
     <Card className="group shadow-card hover:shadow-elevated transition-all duration-300 border-transparent hover:border-primary/20 overflow-hidden">
-      <div className="absolute inset-0 gradient-primary opacity-0 group-hover:opacity-5 transition-opacity" />
+      <div className="absolute inset-0 gradient-primary opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none" />
       <CardHeader className="pb-3">
         {subjectName && (
           <Badge variant="secondary" className="w-fit mb-2">
