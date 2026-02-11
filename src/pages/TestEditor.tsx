@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WrittenQuestionForm } from '@/components/admin/WrittenQuestionForm';
 import { AIQuestionGenerator } from '@/components/admin/AIQuestionGenerator';
+import LatexRenderer from '@/components/ui/LatexRenderer';
 import {
   Dialog,
   DialogContent,
@@ -565,7 +566,7 @@ function TestEditorContent() {
                               className="max-h-32 rounded-lg border mb-3"
                             />
                           )}
-                          <p className="font-medium mb-3">{question.question_text_uz}</p>
+                          <p className="font-medium mb-3"><LatexRenderer text={question.question_text_uz} /></p>
                           <div className="grid grid-cols-2 gap-2">
                             {(question.options as string[]).map((option, i) => (
                               <div
@@ -577,7 +578,7 @@ function TestEditorContent() {
                                 }`}
                               >
                                 <span className="font-semibold mr-2">{String.fromCharCode(65 + i)}.</span>
-                                {option}
+                                <LatexRenderer text={option} />
                               </div>
                             ))}
                           </div>
