@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import LatexRenderer from '@/components/ui/LatexRenderer';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Subject } from '@/types/test';
@@ -299,7 +300,7 @@ export function AIQuestionGenerator({ testId, subjects, onQuestionsAdded }: AIQu
                             </Badge>
                             <span className="text-sm text-muted-foreground">#{i + 1}</span>
                           </div>
-                          <p className="font-medium">{q.question_text}</p>
+                          <p className="font-medium"><LatexRenderer text={q.question_text} /></p>
                           
                           {q.type === 'single_choice' && q.options && (
                             <div className="grid grid-cols-2 gap-2 mt-2">
@@ -308,7 +309,7 @@ export function AIQuestionGenerator({ testId, subjects, onQuestionsAdded }: AIQu
                                   key={oi}
                                   className={`p-2 rounded text-sm ${oi === q.correct_option ? 'bg-success/10 text-success border border-success/30' : 'bg-muted'}`}
                                 >
-                                  {String.fromCharCode(65 + oi)}) {opt}
+                                  {String.fromCharCode(65 + oi)}) <LatexRenderer text={opt} />
                                   {oi === q.correct_option && <Check className="inline h-3 w-3 ml-1" />}
                                 </div>
                               ))}
