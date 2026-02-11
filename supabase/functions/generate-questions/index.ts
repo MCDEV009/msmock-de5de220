@@ -155,6 +155,10 @@ Return a JSON object with this exact structure:
     let jsonString = jsonMatch[0];
     // Replace backslash sequences that aren't valid JSON escapes
     jsonString = jsonString.replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
+    // Fix \f when part of LaTeX commands like \frac, \flat (not standalone form feed)
+    jsonString = jsonString.replace(/\\f(?=[a-zA-Z])/g, '\\\\f');
+    // Fix \b when part of LaTeX commands like \binom, \boldsymbol
+    jsonString = jsonString.replace(/\\b(?=[a-zA-Z])/g, '\\\\b');
 
     const parsedResponse = JSON.parse(jsonString);
 
