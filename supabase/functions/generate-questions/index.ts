@@ -151,7 +151,12 @@ Return a JSON object with this exact structure:
       throw new Error("No valid JSON found in AI response");
     }
 
-    const parsedResponse = JSON.parse(jsonMatch[0]);
+    // Fix invalid escape sequences from LaTeX in AI responses
+    let jsonString = jsonMatch[0];
+    // Replace backslash sequences that aren't valid JSON escapes
+    jsonString = jsonString.replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
+
+    const parsedResponse = JSON.parse(jsonString);
 
     if (!parsedResponse.questions || !Array.isArray(parsedResponse.questions)) {
       throw new Error("Invalid response format from AI");
