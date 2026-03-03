@@ -11,17 +11,6 @@ interface WrittenAnswer {
   answer_b: string;
 }
 
-interface QuestionData {
-  id: string;
-  question_text_uz: string;
-  question_text_ru?: string;
-  model_answer_uz?: string;
-  model_answer_ru?: string;
-  rubric_uz?: string;
-  rubric_ru?: string;
-  max_points: number;
-}
-
 interface EvaluationResult {
   score: number;
   feedback_uz: string;
@@ -68,6 +57,22 @@ serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Validate: attempt must be finished
+    if (attempt.status !== 'finished') {
+      return new Response(
+        JSON.stringify({ error: "Attempt is not finished" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Prevent re-evaluation
+    if (attempt.evaluation_status === 'completed') {
+      return new Response(
+        JSON.stringify({ error: "Attempt already evaluated" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     // Update status to evaluating
     await supabase
@@ -75,38 +80,73 @@ serve(async (req) => {
       .update({ evaluation_status: 'evaluating' })
       .eq('id', attempt_id);
     
-    // Get written questions (order_index >= 35 for Milliy Sertifikat format)
-    const { data: questions, error: questionsError } = await supabase
+    // Get ALL questions for the test (using service role bypasses RLS)
+    const { data: allQuestions, error: questionsError } = await supabase
       .from('questions')
       .select('*')
       .eq('test_id', attempt.test_id)
-      .eq('question_type', 'written')
       .order('order_index');
     
-    if (questionsError || !questions || questions.length === 0) {
-      // No written questions, mark as completed
+    if (questionsError || !allQuestions) {
       await supabase
         .from('test_attempts')
         .update({ evaluation_status: 'completed' })
         .eq('id', attempt_id);
-        
       return new Response(
-        JSON.stringify({ message: "No written questions to evaluate" }),
+        JSON.stringify({ message: "No questions found" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const mcqQuestions = allQuestions.filter((q: any) => q.question_type === 'single_choice');
+    const writtenQuestions = allQuestions.filter((q: any) => q.question_type === 'written');
+    const answers = attempt.answers || {};
+    const writtenAnswers = attempt.written_answers || {};
+
+    // --- Compute MCQ scores server-side ---
+    let mcqCorrect = 0;
+    const allEvaluations: Record<string, any> = {};
+
+    for (const q of mcqQuestions) {
+      const userAnswer = answers[q.id];
+      const isCorrect = userAnswer === q.correct_option;
+      if (isCorrect) mcqCorrect++;
+      allEvaluations[q.id] = {
+        correct_option: q.correct_option,
+        user_answer: userAnswer,
+        is_correct: isCorrect
+      };
+    }
+
+    // --- Evaluate written questions with AI ---
+    let totalWrittenScore = 0;
+
+    if (writtenQuestions.length === 0) {
+      // No written questions - just save MCQ results
+      await supabase
+        .from('test_attempts')
+        .update({
+          ai_evaluation: allEvaluations,
+          mcq_score: mcqCorrect,
+          correct_answers: mcqCorrect,
+          written_score: 0,
+          evaluation_status: 'completed',
+          score: mcqCorrect
+        })
+        .eq('id', attempt_id);
+
+      return new Response(
+        JSON.stringify({ success: true, mcq_score: mcqCorrect, total_score: mcqCorrect }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    const writtenAnswers = attempt.written_answers || {};
-    const evaluations: Record<string, EvaluationResult> = {};
-    let totalWrittenScore = 0;
-    
     // Evaluate each written question
-    for (const question of questions) {
+    for (const question of writtenQuestions) {
       const answer = writtenAnswers[question.id] as WrittenAnswer | undefined;
       
       if (!answer || (!answer.answer_a?.trim() && !answer.answer_b?.trim())) {
-        // No answer provided
-        evaluations[question.id] = {
+        allEvaluations[question.id] = {
           score: 0,
           feedback_uz: "Javob berilmagan",
           feedback_ru: "Ответ не предоставлен",
@@ -116,7 +156,6 @@ serve(async (req) => {
         continue;
       }
       
-      // Build the RUSH evaluation prompt
       const systemPrompt = `You are an expert exam evaluator for the Uzbekistan National Certificate (Milliy Sertifikat) exam.
 
 EVALUATION METHOD: RUSH (Rubric-based, Understanding-focused, Structured feedback, Human-like judgment)
@@ -204,7 +243,6 @@ Evaluate this answer according to RUSH methodology and respond with JSON only.`;
           throw new Error("Empty AI response");
         }
         
-        // Parse JSON from response (handle markdown code blocks)
         let jsonStr = content;
         const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (jsonMatch) {
@@ -212,17 +250,14 @@ Evaluate this answer according to RUSH methodology and respond with JSON only.`;
         }
         
         const evaluation: EvaluationResult = JSON.parse(jsonStr);
-        
-        // Clamp score to valid range
         evaluation.score = Math.max(0, Math.min(question.max_points || 2, evaluation.score));
         
-        evaluations[question.id] = evaluation;
+        allEvaluations[question.id] = evaluation;
         totalWrittenScore += evaluation.score;
         
       } catch (evalError) {
         console.error(`Error evaluating question ${question.id}:`, evalError);
-        // Fallback evaluation
-        evaluations[question.id] = {
+        allEvaluations[question.id] = {
           score: 0,
           feedback_uz: "Baholashda xatolik yuz berdi",
           feedback_ru: "Произошла ошибка при оценке",
@@ -232,14 +267,17 @@ Evaluate this answer according to RUSH methodology and respond with JSON only.`;
       }
     }
     
-    // Update attempt with evaluation results
+    // Update attempt with all evaluation results
+    const totalScore = mcqCorrect + totalWrittenScore;
     const { error: updateError } = await supabase
       .from('test_attempts')
       .update({
-        ai_evaluation: evaluations,
+        ai_evaluation: allEvaluations,
+        mcq_score: mcqCorrect,
+        correct_answers: mcqCorrect,
         written_score: totalWrittenScore,
         evaluation_status: 'completed',
-        score: (attempt.mcq_score || 0) + totalWrittenScore
+        score: totalScore
       })
       .eq('id', attempt_id);
     
@@ -251,9 +289,9 @@ Evaluate this answer according to RUSH methodology and respond with JSON only.`;
     return new Response(
       JSON.stringify({
         success: true,
-        evaluations,
-        total_written_score: totalWrittenScore,
-        total_score: (attempt.mcq_score || 0) + totalWrittenScore
+        mcq_score: mcqCorrect,
+        written_score: totalWrittenScore,
+        total_score: totalScore
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

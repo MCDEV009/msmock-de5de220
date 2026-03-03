@@ -54,7 +54,7 @@ function TestEntryContent() {
         
         // Get question count
         const { count } = await supabase
-          .from('questions')
+          .from('questions_public' as any)
           .select('*', { count: 'exact', head: true })
           .eq('test_id', data.id);
         setQuestionCount(count || 0);
