@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { WrittenQuestionInput } from '@/components/test/WrittenQuestionInput';
+import LatexRenderer from '@/components/ui/LatexRenderer';
 import { QuestionNavigator } from '@/components/test/QuestionNavigator';
 import {
   AlertDialog,
@@ -403,9 +404,9 @@ function TestInterfaceContent() {
                   </div>
                 )}
                 
-                <p className="text-lg font-medium mb-6 whitespace-pre-wrap">
-                  {questionText}
-                </p>
+                <div className="text-lg font-medium mb-6 whitespace-pre-wrap">
+                  <LatexRenderer text={questionText} />
+                </div>
                 
                 {/* MCQ Options */}
                 {currentQuestion.question_type === 'single_choice' && currentOptions && (
@@ -425,7 +426,7 @@ function TestInterfaceContent() {
                         <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted font-semibold mr-3">
                           {String.fromCharCode(65 + i)}
                         </span>
-                        {option}
+                        <LatexRenderer text={String(option)} />
                       </button>
                     ))}
                   </div>
