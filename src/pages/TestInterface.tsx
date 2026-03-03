@@ -98,15 +98,15 @@ function TestInterfaceContent() {
         setTimeLeft(remaining);
       }
       
-      // Get questions
+      // Get questions (using public view that excludes correct answers)
       const { data: questionsData } = await supabase
-        .from('questions')
+        .from('questions_public' as any)
         .select('*')
         .eq('test_id', attemptData.test_id)
         .order('order_index');
       
       if (questionsData) {
-        let processedQuestions = questionsData as Question[];
+        let processedQuestions = questionsData as unknown as Question[];
         
         // For Milliy Sertifikat, keep MCQ questions first (1-35), then written (36-45)
         const mcqQuestions = processedQuestions.filter(q => q.question_type === 'single_choice');
@@ -244,42 +244,27 @@ function TestInterfaceContent() {
     
     setSubmitting(true);
     
-    // Calculate MCQ score
-    let mcqCorrectCount = 0;
-    const mcqQuestions = questions.filter(q => q.question_type === 'single_choice');
-    mcqQuestions.forEach((q) => {
-      if (mcqAnswers[q.id] === q.correct_option) {
-        mcqCorrectCount++;
-      }
-    });
-    
     try {
       await supabase
         .from('test_attempts')
         .update({
           status: 'finished',
           finished_at: new Date().toISOString(),
-          mcq_score: mcqCorrectCount,
-          correct_answers: mcqCorrectCount,
           answers: mcqAnswers as any,
           written_answers: writtenAnswers as any,
-          evaluation_status: questions.some(q => q.question_type === 'written') ? 'pending' : 'completed'
+          evaluation_status: 'pending'
         })
         .eq('id', attemptId);
       
-      // Trigger AI evaluation for written questions if any
-      const writtenQuestions = questions.filter(q => q.question_type === 'written');
-      if (writtenQuestions.length > 0) {
-        // Call evaluation edge function (async, don't wait)
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evaluate-written-answers`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-          },
-          body: JSON.stringify({ attempt_id: attemptId })
-        }).catch(err => console.error('Evaluation trigger error:', err));
-      }
+      // Trigger server-side evaluation (MCQ scoring + written AI evaluation)
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evaluate-written-answers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+        },
+        body: JSON.stringify({ attempt_id: attemptId })
+      }).catch(err => console.error('Evaluation trigger error:', err));
       
       if (document.fullscreenElement) {
         document.exitFullscreen();

@@ -317,7 +317,59 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      questions_public: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          image_url: string | null
+          max_points: number | null
+          options: Json | null
+          order_index: number | null
+          points: number | null
+          question_text_en: string | null
+          question_text_ru: string | null
+          question_text_uz: string | null
+          question_type: Database["public"]["Enums"]["question_type"] | null
+          test_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          max_points?: number | null
+          options?: Json | null
+          order_index?: number | null
+          points?: number | null
+          question_text_en?: string | null
+          question_text_ru?: string | null
+          question_text_uz?: string | null
+          question_type?: Database["public"]["Enums"]["question_type"] | null
+          test_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          max_points?: number | null
+          options?: Json | null
+          order_index?: number | null
+          points?: number | null
+          question_text_en?: string | null
+          question_text_ru?: string | null
+          question_text_uz?: string | null
+          question_type?: Database["public"]["Enums"]["question_type"] | null
+          test_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       generate_participant_id: { Args: never; Returns: string }

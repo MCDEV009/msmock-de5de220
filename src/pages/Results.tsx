@@ -73,13 +73,13 @@ function ResultsContent() {
       }
       
       const { data: questionsData } = await supabase
-        .from('questions')
+        .from('questions_public' as any)
         .select('*')
         .eq('test_id', attemptData.test_id)
         .order('order_index');
       
       if (questionsData) {
-        setQuestions(questionsData as Question[]);
+        setQuestions(questionsData as unknown as Question[]);
       }
       
       setLoading(false);
@@ -242,7 +242,8 @@ function ResultsContent() {
               
               {mcqQuestions.map((question, index) => {
                 const userAnswer = answers[question.id];
-                const isCorrect = userAnswer === question.correct_option;
+                const mcqResult = aiEvaluation[question.id] as any;
+                const isCorrect = mcqResult?.is_correct ?? false;
                 const isExpanded = expandedQuestions.has(question.id);
                 const options = question.options as string[];
                 
@@ -288,7 +289,7 @@ function ResultsContent() {
                         <div className="space-y-2">
                           {options.map((option, i) => {
                             const isUserAnswer = userAnswer === i;
-                            const isCorrectAnswer = question.correct_option === i;
+                            const isCorrectAnswer = mcqResult?.correct_option === i;
                             
                             return (
                               <div
