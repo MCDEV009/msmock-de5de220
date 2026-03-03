@@ -186,22 +186,37 @@ Return a JSON object with this exact structure:
 
     console.log("AI response content:", content);
 
-    // Extract JSON from the response
-    let jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error("No valid JSON found in AI response");
+    // Robust JSON extraction from LLM output
+    function extractJsonFromResponse(response: string): unknown {
+      let cleaned = response
+        .replace(/```json\s*/gi, "")
+        .replace(/```\s*/g, "")
+        .trim();
+
+      const jsonStart = cleaned.search(/[\{\[]/);
+      const jsonEnd = cleaned.lastIndexOf(jsonStart !== -1 && cleaned[jsonStart] === '[' ? ']' : '}');
+
+      if (jsonStart === -1 || jsonEnd === -1) {
+        throw new Error("No JSON object found in AI response");
+      }
+
+      cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+
+      try {
+        return JSON.parse(cleaned);
+      } catch (_e) {
+        // Fix common LLM JSON issues
+        cleaned = cleaned
+          .replace(/,\s*}/g, "}") // trailing commas
+          .replace(/,\s*]/g, "]")
+          .replace(/[\x00-\x1F\x7F]/g, "") // control characters
+          .replace(/\\(?!["\\/bfnrtu])/g, '\\\\'); // invalid escapes (LaTeX)
+
+        return JSON.parse(cleaned);
+      }
     }
 
-    // Fix invalid escape sequences from LaTeX in AI responses
-    let jsonString = jsonMatch[0];
-    // Replace backslash sequences that aren't valid JSON escapes
-    jsonString = jsonString.replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
-    // Fix \f when part of LaTeX commands like \frac, \flat (not standalone form feed)
-    jsonString = jsonString.replace(/\\f(?=[a-zA-Z])/g, '\\\\f');
-    // Fix \b when part of LaTeX commands like \binom, \boldsymbol
-    jsonString = jsonString.replace(/\\b(?=[a-zA-Z])/g, '\\\\b');
-
-    const parsedResponse = JSON.parse(jsonString);
+    const parsedResponse = extractJsonFromResponse(content) as { questions?: unknown[] };
 
     if (!parsedResponse.questions || !Array.isArray(parsedResponse.questions)) {
       throw new Error("Invalid response format from AI");
