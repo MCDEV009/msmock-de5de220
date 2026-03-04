@@ -48,6 +48,11 @@ export interface Question {
   model_answer_en?: string;
   rubric_uz?: string;
   rubric_ru?: string;
+  // Milliy Sertifikat condition fields (a-shart, b-shart)
+  condition_a_uz?: string;
+  condition_a_ru?: string;
+  condition_b_uz?: string;
+  condition_b_ru?: string;
   created_at: string;
 }
 

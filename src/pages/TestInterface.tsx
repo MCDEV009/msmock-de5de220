@@ -436,8 +436,10 @@ function TestInterfaceContent() {
                 {currentQuestion.question_type === 'written' && (
                   <WrittenQuestionInput
                     questionId={currentQuestion.id}
+                    question={currentQuestion}
                     answer={writtenAnswers[currentQuestion.id]}
                     onChange={handleWrittenAnswerChange}
+                    language={language}
                   />
                 )}
               </CardContent>

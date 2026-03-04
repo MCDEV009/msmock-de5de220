@@ -121,26 +121,36 @@ IMPORTANT: correct_option is a zero-based index (0 for A, 1 for B, 2 for C, 3 fo
       systemPrompt = `You are an expert exam question generator for the Uzbekistan Milliy Sertifikat (National Certificate) exam system.
 Your task is to generate high-quality written/open-ended questions that match the official exam format for questions 36-45.
 
+IMPORTANT FORMAT: Each written question in Milliy Sertifikat has:
+1. A main problem/scenario text (masala)
+2. Two conditions/tasks (a-shart and b-shart) that the student must answer separately
+
 Rules:
-1. Questions should require analytical thinking and explanation
-2. Create clear grading rubrics for 0-2 point scoring
-3. Model answers should be comprehensive but concise
-4. Questions should assess understanding and application of knowledge
-5. ${languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.uz}
-6. Do not include inappropriate, offensive, or harmful content`;
+1. The main question text should present a scenario, problem, or context
+2. a-shart (Condition A) should be the first specific task/question based on the scenario
+3. b-shart (Condition B) should be the second specific task/question based on the scenario
+4. Both conditions should be related but test different aspects
+5. Create clear grading rubrics for 0-2 point scoring (1 point per condition)
+6. Model answers should cover both conditions
+7. ${languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.uz}
+8. Do not include inappropriate, offensive, or harmful content`;
 
       userPrompt = `Generate ${count} written (open-ended) questions for the subject "${subject}".
 Difficulty level: ${difficultyDescriptions[difficulty]}
 ${topic ? `Focus on the topic: ${topic}` : "Cover various topics within the subject"}
+
+Each question must have a main problem text and TWO conditions (a-shart and b-shart).
 
 Return a JSON object with this exact structure:
 {
   "questions": [
     {
       "type": "written",
-      "question_text": "Question text here",
-      "model_answer": "Expected model answer that would receive full marks (0-2 points)",
-      "rubric": "Scoring criteria: 0 points = no answer or completely wrong; 1 point = partial understanding; 2 points = complete and correct answer"
+      "question_text": "Main problem/scenario text here",
+      "condition_a": "First condition/task (a-shart)",
+      "condition_b": "Second condition/task (b-shart)",
+      "model_answer": "Expected model answer covering both conditions (0-2 points)",
+      "rubric": "Scoring: 0 = no answer; 0.5 = weak attempt; 1 = one condition correct; 1.5 = both partially; 2 = both fully correct"
     }
   ]
 }`;

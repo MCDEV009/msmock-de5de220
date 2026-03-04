@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Question, WrittenAnswer, EvaluationResult } from '@/types/test';
 import { CheckCircle, AlertCircle, Loader2, MessageSquare } from 'lucide-react';
+import LatexRenderer from '@/components/ui/LatexRenderer';
 
 interface WrittenQuestionReviewProps {
   question: Question;
@@ -24,6 +25,14 @@ export function WrittenQuestionReview({
   const questionText = language === 'ru' && question.question_text_ru 
     ? question.question_text_ru 
     : question.question_text_uz;
+
+  const conditionA = language === 'ru' && question.condition_a_ru 
+    ? question.condition_a_ru 
+    : question.condition_a_uz;
+  
+  const conditionB = language === 'ru' && question.condition_b_ru 
+    ? question.condition_b_ru 
+    : question.condition_b_uz;
 
   const feedback = evaluation 
     ? (language === 'ru' ? evaluation.feedback_ru : evaluation.feedback_uz)
@@ -66,7 +75,7 @@ export function WrittenQuestionReview({
           )}
         </div>
 
-        {/* Question */}
+        {/* Question (Masala) */}
         <div>
           {question.image_url && (
             <img 
@@ -75,23 +84,35 @@ export function WrittenQuestionReview({
               className="max-h-48 rounded-lg border mb-3"
             />
           )}
-          <p className="font-medium whitespace-pre-wrap">{questionText}</p>
+          <p className="font-medium whitespace-pre-wrap">
+            <LatexRenderer text={questionText} />
+          </p>
         </div>
 
-        {/* Student Answers */}
+        {/* Student Answers with Conditions */}
         <div className="space-y-3 bg-muted/50 rounded-lg p-4">
           <p className="text-sm font-medium text-muted-foreground">Sizning javoblaringiz:</p>
           
           {answer ? (
             <>
               <div className="space-y-1">
-                <p className="text-xs font-medium">Javob A:</p>
+                <p className="text-xs font-medium">a-shart:</p>
+                {conditionA && (
+                  <div className="text-sm p-2 rounded bg-muted border-l-2 border-primary mb-1">
+                    <LatexRenderer text={conditionA} />
+                  </div>
+                )}
                 <p className="text-sm whitespace-pre-wrap bg-background rounded p-2 border">
                   {answer.answer_a || <span className="text-muted-foreground italic">Bo'sh</span>}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium">Javob B:</p>
+                <p className="text-xs font-medium">b-shart:</p>
+                {conditionB && (
+                  <div className="text-sm p-2 rounded bg-muted border-l-2 border-primary mb-1">
+                    <LatexRenderer text={conditionB} />
+                  </div>
+                )}
                 <p className="text-sm whitespace-pre-wrap bg-background rounded p-2 border">
                   {answer.answer_b || <span className="text-muted-foreground italic">Bo'sh</span>}
                 </p>
