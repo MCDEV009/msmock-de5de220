@@ -182,23 +182,30 @@ You MUST respond with a JSON object in this exact format:
   "missing_points": ["<missing point 1>"]
 }`;
 
-      const userPrompt = `QUESTION (Savol):
+      const userPrompt = `QUESTION (Masala):
 ${question.question_text_uz}
 ${question.question_text_ru ? `\n(Russian): ${question.question_text_ru}` : ''}
+
+${question.condition_a_uz ? `a-shart (Condition A): ${question.condition_a_uz}` : ''}
+${question.condition_a_ru ? `(Russian): ${question.condition_a_ru}` : ''}
+
+${question.condition_b_uz ? `b-shart (Condition B): ${question.condition_b_uz}` : ''}
+${question.condition_b_ru ? `(Russian): ${question.condition_b_ru}` : ''}
 
 MODEL ANSWER (Namunaviy javob):
 ${question.model_answer_uz || 'Not provided'}
 ${question.model_answer_ru ? `\n(Russian): ${question.model_answer_ru}` : ''}
 
 EVALUATION RUBRIC:
-${question.rubric_uz || 'Evaluate based on correctness and completeness'}
+${question.rubric_uz || 'Evaluate based on correctness and completeness. 1 point per condition (a-shart and b-shart).'}
 ${question.rubric_ru ? `\n(Russian): ${question.rubric_ru}` : ''}
 
 STUDENT'S ANSWER (O'quvchining javobi):
-Answer A: ${answer.answer_a || '(empty)'}
-Answer B: ${answer.answer_b || '(empty)'}
+Answer for a-shart: ${answer.answer_a || '(empty)'}
+Answer for b-shart: ${answer.answer_b || '(empty)'}
 
-Evaluate this answer according to RUSH methodology and respond with JSON only.`;
+Evaluate each condition separately. The total score should reflect performance on both a-shart and b-shart.
+Respond with JSON only.`;
 
       try {
         const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

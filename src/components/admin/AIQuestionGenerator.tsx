@@ -30,6 +30,8 @@ interface GeneratedQuestion {
   explanation?: string;
   model_answer?: string;
   rubric?: string;
+  condition_a?: string;
+  condition_b?: string;
   selected: boolean;
 }
 
@@ -123,7 +125,9 @@ export function AIQuestionGenerator({ testId, subjects, onQuestionsAdded }: AIQu
         max_points: q.type === 'written' ? 2 : 1,
         order_index: startIndex + 1 + i,
         model_answer_uz: q.model_answer,
-        rubric_uz: q.rubric
+        rubric_uz: q.rubric,
+        condition_a_uz: q.condition_a || null,
+        condition_b_uz: q.condition_b || null
       }));
 
       const { error } = await supabase
@@ -316,9 +320,23 @@ export function AIQuestionGenerator({ testId, subjects, onQuestionsAdded }: AIQu
                             </div>
                           )}
 
-                          {q.type === 'written' && q.model_answer && (
-                            <div className="mt-2 p-2 bg-muted rounded text-sm">
-                              <span className="font-medium">Namunaviy javob:</span> {q.model_answer}
+                          {q.type === 'written' && (
+                            <div className="mt-2 space-y-2">
+                              {q.condition_a && (
+                                <div className="p-2 bg-muted rounded text-sm">
+                                  <span className="font-medium">a-shart:</span> <LatexRenderer text={q.condition_a} />
+                                </div>
+                              )}
+                              {q.condition_b && (
+                                <div className="p-2 bg-muted rounded text-sm">
+                                  <span className="font-medium">b-shart:</span> <LatexRenderer text={q.condition_b} />
+                                </div>
+                              )}
+                              {q.model_answer && (
+                                <div className="p-2 bg-muted rounded text-sm">
+                                  <span className="font-medium">Namunaviy javob:</span> {q.model_answer}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

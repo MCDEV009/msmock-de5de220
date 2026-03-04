@@ -67,6 +67,10 @@ interface McqFormData {
 interface WrittenFormData {
   question_text_uz: string;
   question_text_ru: string;
+  condition_a_uz: string;
+  condition_a_ru: string;
+  condition_b_uz: string;
+  condition_b_ru: string;
   model_answer_uz: string;
   model_answer_ru: string;
   rubric_uz: string;
@@ -104,6 +108,10 @@ function TestEditorContent() {
   const [writtenForm, setWrittenForm] = useState<WrittenFormData>({
     question_text_uz: '',
     question_text_ru: '',
+    condition_a_uz: '',
+    condition_a_ru: '',
+    condition_b_uz: '',
+    condition_b_ru: '',
     model_answer_uz: '',
     model_answer_ru: '',
     rubric_uz: '',
@@ -165,6 +173,10 @@ function TestEditorContent() {
     setWrittenForm({
       question_text_uz: '',
       question_text_ru: '',
+      condition_a_uz: '',
+      condition_a_ru: '',
+      condition_b_uz: '',
+      condition_b_ru: '',
       model_answer_uz: '',
       model_answer_ru: '',
       rubric_uz: '',
@@ -194,6 +206,10 @@ function TestEditorContent() {
         setWrittenForm({
           question_text_uz: question.question_text_uz,
           question_text_ru: question.question_text_ru || '',
+          condition_a_uz: (question as any).condition_a_uz || '',
+          condition_a_ru: (question as any).condition_a_ru || '',
+          condition_b_uz: (question as any).condition_b_uz || '',
+          condition_b_ru: (question as any).condition_b_ru || '',
           model_answer_uz: question.model_answer_uz || '',
           model_answer_ru: question.model_answer_ru || '',
           rubric_uz: question.rubric_uz || '',
@@ -259,6 +275,10 @@ function TestEditorContent() {
       ...baseData,
       question_text_uz: writtenForm.question_text_uz.trim(),
       question_text_ru: writtenForm.question_text_ru.trim() || null,
+      condition_a_uz: writtenForm.condition_a_uz.trim() || null,
+      condition_a_ru: writtenForm.condition_a_ru.trim() || null,
+      condition_b_uz: writtenForm.condition_b_uz.trim() || null,
+      condition_b_ru: writtenForm.condition_b_ru.trim() || null,
       model_answer_uz: writtenForm.model_answer_uz.trim(),
       model_answer_ru: writtenForm.model_answer_ru.trim() || null,
       rubric_uz: writtenForm.rubric_uz.trim() || null,
