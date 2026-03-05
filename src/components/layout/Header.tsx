@@ -26,7 +26,7 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary shadow-soft group-hover:shadow-glow transition-shadow">
-              <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
+              <GraduationCap className="h-5 w-5 text-primary-foreground" />
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-lg tracking-tight leading-tight">Milliy Sertifikat</span>
