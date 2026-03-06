@@ -140,6 +140,7 @@ function ResultsContent() {
   const answers = (attempt.answers || {}) as Record<string, number>;
   const writtenAnswers = (attempt.written_answers || {}) as Record<string, WrittenAnswer>;
   const aiEvaluation = (attempt.ai_evaluation || {}) as Record<string, EvaluationResult>;
+  const raschData = (aiEvaluation as any)['_rasch'] as { theta: number; t_score: number; total_attempts_analyzed: number } | undefined;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -192,6 +193,30 @@ function ResultsContent() {
                   <div className="text-3xl font-bold">{percentage}%</div>
                 </div>
               </div>
+
+              {/* Rasch Model T-Score for Milliy Sertifikat */}
+              {test.test_format === 'milliy_sertifikat' && raschData && (
+                <div className="p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
+                  <div className="text-sm text-muted-foreground mb-2 font-medium">Rasch modeli natijalari</div>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Qobiliyat (θ)</div>
+                      <div className="text-xl font-bold text-primary">{raschData.theta}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">T-ball</div>
+                      <div className="text-xl font-bold text-primary">{raschData.t_score}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Tahlil qilingan urinishlar</div>
+                      <div className="text-xl font-bold">{raschData.total_attempts_analyzed}</div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    T = 50 + 10 × Z, Z = (θ - μ) / σ
+                  </p>
+                </div>
+              )}
               
               <Progress 
                 value={percentage} 

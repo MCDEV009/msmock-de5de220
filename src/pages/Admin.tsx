@@ -104,7 +104,7 @@ function AdminContent() {
     description_uz: '',
     subject_id: '',
     visibility: 'public' as 'public' | 'private',
-    duration_minutes: 120,
+    duration_minutes: 150,
     allow_retry: false,
     randomize_questions: true,
     randomize_options: true,
