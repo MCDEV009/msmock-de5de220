@@ -187,18 +187,21 @@ function AdminContent() {
       
       const { data: attemptsData } = await supabase
         .from('test_attempts')
-        .select('score, total_questions')
+        .select('score, total_questions, mcq_score, written_score')
         .eq('status', 'finished');
       
       let avgScore = 0;
       let successRate = 0;
       if (attemptsData && attemptsData.length > 0) {
-        const totalScore = attemptsData.reduce((acc, a) => acc + (a.score || 0), 0);
-        const totalQuestions = attemptsData.reduce((acc, a) => acc + (a.total_questions || 0), 0);
-        avgScore = totalQuestions > 0 ? Math.round((totalScore / totalQuestions) * 100) : 0;
-        const passed = attemptsData.filter(a => 
-          a.total_questions > 0 && (a.score / a.total_questions) >= 0.6
-        ).length;
+        // Each attempt's percentage: score is raw points, total_questions is question count
+        // We need to compute per-attempt percentage properly
+        const percentages = attemptsData.map(a => {
+          const total = a.total_questions || 0;
+          const score = a.score || 0;
+          return total > 0 ? (score / total) * 100 : 0;
+        });
+        avgScore = Math.round(percentages.reduce((acc, p) => acc + p, 0) / percentages.length);
+        const passed = percentages.filter(p => p >= 60).length;
         successRate = Math.round((passed / attemptsData.length) * 100);
       }
       
