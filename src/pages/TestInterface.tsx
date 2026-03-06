@@ -246,7 +246,7 @@ function TestInterfaceContent() {
     setSubmitting(true);
     
     try {
-      await supabase
+      const { error: updateError } = await supabase
         .from('test_attempts')
         .update({
           status: 'finished',
@@ -257,15 +257,26 @@ function TestInterfaceContent() {
         })
         .eq('id', attemptId);
       
-      // Trigger server-side evaluation (MCQ scoring + written AI evaluation)
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evaluate-written-answers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-        },
-        body: JSON.stringify({ attempt_id: attemptId })
-      }).catch(err => console.error('Evaluation trigger error:', err));
+      if (updateError) {
+        console.error('Failed to finish attempt:', updateError);
+        toast.error(t('error'));
+        setSubmitting(false);
+        return;
+      }
+      
+      // Trigger server-side evaluation after confirmed finish
+      try {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evaluate-written-answers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+          },
+          body: JSON.stringify({ attempt_id: attemptId })
+        });
+      } catch (err) {
+        console.error('Evaluation trigger error:', err);
+      }
       
       if (document.fullscreenElement) {
         document.exitFullscreen();
