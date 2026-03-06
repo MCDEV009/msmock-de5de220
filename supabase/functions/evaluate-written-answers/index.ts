@@ -19,6 +19,100 @@ interface EvaluationResult {
   missing_points: string[];
 }
 
+// --- Rasch Model & T-Score Functions ---
+
+/** Rasch probability: P = e^(θ - b) / (1 + e^(θ - b)) */
+function raschProbability(theta: number, difficulty: number): number {
+  const exponent = theta - difficulty;
+  return Math.exp(exponent) / (1 + Math.exp(exponent));
+}
+
+/**
+ * Estimate ability (θ) using Newton-Raphson method on Rasch model.
+ * responses: array of {correct: boolean, difficulty: number}
+ */
+function estimateAbility(responses: { correct: boolean; difficulty: number }[]): number {
+  if (responses.length === 0) return 0;
+  
+  const totalCorrect = responses.filter(r => r.correct).length;
+  // Edge cases: all correct or all wrong
+  if (totalCorrect === 0) return -3;
+  if (totalCorrect === responses.length) return 3;
+  
+  let theta = 0; // initial estimate
+  
+  for (let iter = 0; iter < 50; iter++) {
+    let sumP = 0;
+    let sumPQ = 0;
+    
+    for (const r of responses) {
+      const p = raschProbability(theta, r.difficulty);
+      sumP += p;
+      sumPQ += p * (1 - p);
+    }
+    
+    // Newton-Raphson update: θ_new = θ + (X - Σp) / ΣpQ
+    const adjustment = (totalCorrect - sumP) / sumPQ;
+    theta += adjustment;
+    
+    if (Math.abs(adjustment) < 0.001) break;
+  }
+  
+  // Clamp to reasonable range
+  return Math.max(-4, Math.min(4, theta));
+}
+
+/**
+ * Estimate item difficulties from all attempts using Rasch model.
+ * Uses proportion correct as initial estimate, then refines.
+ */
+function estimateItemDifficulties(
+  allAttempts: { answers: Record<string, number>; }[],
+  questions: { id: string; correct_option: number }[]
+): Map<string, number> {
+  const difficulties = new Map<string, number>();
+  
+  for (const q of questions) {
+    let correct = 0;
+    let total = 0;
+    
+    for (const attempt of allAttempts) {
+      if (attempt.answers && attempt.answers[q.id] !== undefined) {
+        total++;
+        if (attempt.answers[q.id] === q.correct_option) {
+          correct++;
+        }
+      }
+    }
+    
+    // Convert proportion correct to logit difficulty
+    // b = -ln(p / (1-p)) where p is proportion correct
+    const p = total > 0 ? Math.max(0.01, Math.min(0.99, correct / total)) : 0.5;
+    const difficulty = -Math.log(p / (1 - p));
+    difficulties.set(q.id, difficulty);
+  }
+  
+  return difficulties;
+}
+
+/**
+ * Calculate T-score: T = 50 + 10 * Z where Z = (θ - μ) / σ
+ * Uses population mean and std dev of all abilities.
+ */
+function calculateTScore(theta: number, allThetas: number[]): number {
+  if (allThetas.length <= 1) {
+    // With insufficient data, use a simple mapping
+    return Math.round(50 + 10 * theta);
+  }
+  
+  const mean = allThetas.reduce((a, b) => a + b, 0) / allThetas.length;
+  const variance = allThetas.reduce((a, b) => a + (b - mean) ** 2, 0) / allThetas.length;
+  const stdDev = Math.sqrt(variance) || 1;
+  
+  const z = (theta - mean) / stdDev;
+  return Math.round(50 + 10 * z);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -102,6 +196,7 @@ serve(async (req) => {
     const writtenQuestions = allQuestions.filter((q: any) => q.question_type === 'written');
     const answers = attempt.answers || {};
     const writtenAnswers = attempt.written_answers || {};
+    const isMilliySertifikat = attempt.tests?.test_format === 'milliy_sertifikat';
 
     // --- Compute MCQ scores server-side ---
     let mcqCorrect = 0;
@@ -118,25 +213,82 @@ serve(async (req) => {
       };
     }
 
+    // --- Rasch Model Scoring for Milliy Sertifikat ---
+    let raschData: any = null;
+    
+    if (isMilliySertifikat && mcqQuestions.length > 0) {
+      try {
+        // Get all finished attempts for this test to estimate item difficulties
+        const { data: allAttempts } = await supabase
+          .from('test_attempts')
+          .select('answers')
+          .eq('test_id', attempt.test_id)
+          .eq('status', 'finished');
+        
+        const finishedAttempts = (allAttempts || []).map(a => ({
+          answers: (a.answers || {}) as Record<string, number>
+        }));
+        
+        // Estimate item difficulties
+        const difficulties = estimateItemDifficulties(finishedAttempts, mcqQuestions);
+        
+        // Build responses for current attempt
+        const responses = mcqQuestions.map(q => ({
+          correct: answers[q.id] === q.correct_option,
+          difficulty: difficulties.get(q.id) || 0
+        }));
+        
+        // Estimate ability (θ) for current attempt
+        const theta = estimateAbility(responses);
+        
+        // Estimate abilities for all attempts to calculate T-score
+        const allThetas = finishedAttempts.map(a => {
+          const resp = mcqQuestions.map(q => ({
+            correct: a.answers[q.id] === q.correct_option,
+            difficulty: difficulties.get(q.id) || 0
+          }));
+          return estimateAbility(resp);
+        });
+        
+        const tScore = calculateTScore(theta, allThetas);
+        
+        raschData = {
+          theta: Math.round(theta * 1000) / 1000,
+          t_score: tScore,
+          item_difficulties: Object.fromEntries(difficulties),
+          total_attempts_analyzed: finishedAttempts.length
+        };
+      } catch (raschError) {
+        console.error("Rasch model error:", raschError);
+        // Continue without Rasch data
+      }
+    }
+
     // --- Evaluate written questions with AI ---
     let totalWrittenScore = 0;
 
     if (writtenQuestions.length === 0) {
       // No written questions - just save MCQ results
+      const updateData: any = {
+        ai_evaluation: allEvaluations,
+        mcq_score: mcqCorrect,
+        correct_answers: mcqCorrect,
+        written_score: 0,
+        evaluation_status: 'completed',
+        score: mcqCorrect
+      };
+      
+      if (raschData) {
+        updateData.ai_evaluation = { ...allEvaluations, _rasch: raschData };
+      }
+      
       await supabase
         .from('test_attempts')
-        .update({
-          ai_evaluation: allEvaluations,
-          mcq_score: mcqCorrect,
-          correct_answers: mcqCorrect,
-          written_score: 0,
-          evaluation_status: 'completed',
-          score: mcqCorrect
-        })
+        .update(updateData)
         .eq('id', attempt_id);
 
       return new Response(
-        JSON.stringify({ success: true, mcq_score: mcqCorrect, total_score: mcqCorrect }),
+        JSON.stringify({ success: true, mcq_score: mcqCorrect, total_score: mcqCorrect, rasch: raschData }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -274,6 +426,11 @@ Respond with JSON only.`;
       }
     }
     
+    // Add Rasch data to evaluations
+    if (raschData) {
+      allEvaluations['_rasch'] = raschData;
+    }
+    
     // Update attempt with all evaluation results
     const totalScore = mcqCorrect + totalWrittenScore;
     const { error: updateError } = await supabase
@@ -298,7 +455,8 @@ Respond with JSON only.`;
         success: true,
         mcq_score: mcqCorrect,
         written_score: totalWrittenScore,
-        total_score: totalScore
+        total_score: totalScore,
+        rasch: raschData
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
