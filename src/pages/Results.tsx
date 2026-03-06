@@ -140,6 +140,7 @@ function ResultsContent() {
   const answers = (attempt.answers || {}) as Record<string, number>;
   const writtenAnswers = (attempt.written_answers || {}) as Record<string, WrittenAnswer>;
   const aiEvaluation = (attempt.ai_evaluation || {}) as Record<string, EvaluationResult>;
+  const raschData = (aiEvaluation as any)['_rasch'] as { theta: number; t_score: number; total_attempts_analyzed: number } | undefined;
 
   return (
     <div className="min-h-screen flex flex-col">
