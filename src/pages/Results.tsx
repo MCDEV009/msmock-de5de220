@@ -295,6 +295,9 @@ function ResultsContent() {
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="shrink-0">#{index + 1}</Badge>
                           <span className="truncate font-medium">{questionText}</span>
+                          <Badge variant="secondary" className="shrink-0 text-xs">
+                            {isCorrect ? (question.points || 1) : 0}/{question.points || 1} ball
+                          </Badge>
                         </div>
                       </div>
                       {isExpanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
