@@ -470,7 +470,7 @@ Respond with JSON only.`;
     return new Response(
       JSON.stringify({
         success: true,
-        mcq_score: mcqCorrect,
+        mcq_score: mcqScore,
         written_score: totalWrittenScore,
         total_score: totalScore,
         rasch: raschData
