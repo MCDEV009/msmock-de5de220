@@ -116,7 +116,9 @@ function TestEditorContent() {
     model_answer_ru: '',
     rubric_uz: '',
     rubric_ru: '',
-    max_points: 2,
+    max_points: 3.2,
+    points_a: 1.5,
+    points_b: 1.7,
     image_url: ''
   });
 
