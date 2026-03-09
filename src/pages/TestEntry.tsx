@@ -53,10 +53,9 @@ function TestEntryContent() {
         setTest(data as Test);
         
         // Get question count
-        const { count } = await supabase
-          .from('questions_public' as any)
-          .select('*', { count: 'exact', head: true })
-          .eq('test_id', data.id);
+        const { data: qData } = await supabase
+          .rpc('get_public_questions', { p_test_id: data.id });
+        const count = qData?.length || 0;
         setQuestionCount(count || 0);
       }
       setLoading(false);

@@ -335,75 +335,32 @@ export type Database = {
       }
     }
     Views: {
-      questions_public: {
-        Row: {
-          condition_a_ru: string | null
-          condition_a_uz: string | null
-          condition_b_ru: string | null
-          condition_b_uz: string | null
-          created_at: string | null
-          id: string | null
-          image_url: string | null
-          max_points: number | null
-          options: Json | null
-          order_index: number | null
-          points: number | null
-          question_text_en: string | null
-          question_text_ru: string | null
-          question_text_uz: string | null
-          question_type: Database["public"]["Enums"]["question_type"] | null
-          test_id: string | null
-        }
-        Insert: {
-          condition_a_ru?: string | null
-          condition_a_uz?: string | null
-          condition_b_ru?: string | null
-          condition_b_uz?: string | null
-          created_at?: string | null
-          id?: string | null
-          image_url?: string | null
-          max_points?: number | null
-          options?: Json | null
-          order_index?: number | null
-          points?: number | null
-          question_text_en?: string | null
-          question_text_ru?: string | null
-          question_text_uz?: string | null
-          question_type?: Database["public"]["Enums"]["question_type"] | null
-          test_id?: string | null
-        }
-        Update: {
-          condition_a_ru?: string | null
-          condition_a_uz?: string | null
-          condition_b_ru?: string | null
-          condition_b_uz?: string | null
-          created_at?: string | null
-          id?: string | null
-          image_url?: string | null
-          max_points?: number | null
-          options?: Json | null
-          order_index?: number | null
-          points?: number | null
-          question_text_en?: string | null
-          question_text_ru?: string | null
-          question_text_uz?: string | null
-          question_type?: Database["public"]["Enums"]["question_type"] | null
-          test_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "questions_test_id_fkey"
-            columns: ["test_id"]
-            isOneToOne: false
-            referencedRelation: "tests"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       generate_participant_id: { Args: never; Returns: string }
       generate_test_code: { Args: never; Returns: string }
+      get_public_questions: {
+        Args: { p_test_id: string }
+        Returns: {
+          condition_a_ru: string
+          condition_a_uz: string
+          condition_b_ru: string
+          condition_b_uz: string
+          created_at: string
+          id: string
+          image_url: string
+          max_points: number
+          options: Json
+          order_index: number
+          points: number
+          question_text_en: string
+          question_text_ru: string
+          question_text_uz: string
+          question_type: Database["public"]["Enums"]["question_type"]
+          test_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
