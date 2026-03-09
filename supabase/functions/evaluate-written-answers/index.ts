@@ -448,13 +448,14 @@ Respond with JSON only.`;
     }
     
     // Update attempt with all evaluation results
-    const totalScore = mcqCorrect + totalWrittenScore;
+    const mcqCorrectCount = mcqQuestions.filter(q => answers[q.id] === q.correct_option).length;
+    const totalScore = mcqScore + totalWrittenScore;
     const { error: updateError } = await supabase
       .from('test_attempts')
       .update({
         ai_evaluation: allEvaluations,
-        mcq_score: mcqCorrect,
-        correct_answers: mcqCorrect,
+        mcq_score: mcqScore,
+        correct_answers: mcqCorrectCount,
         written_score: totalWrittenScore,
         evaluation_status: 'completed',
         score: totalScore
