@@ -198,18 +198,21 @@ serve(async (req) => {
     const writtenAnswers = attempt.written_answers || {};
     const isMilliySertifikat = attempt.tests?.test_format === 'milliy_sertifikat';
 
-    // --- Compute MCQ scores server-side ---
-    let mcqCorrect = 0;
+    // --- Compute MCQ scores server-side (difficulty-based points) ---
+    let mcqScore = 0;
     const allEvaluations: Record<string, any> = {};
 
     for (const q of mcqQuestions) {
       const userAnswer = answers[q.id];
       const isCorrect = userAnswer === q.correct_option;
-      if (isCorrect) mcqCorrect++;
+      const questionPoints = q.points || 1; // difficulty-based points (e.g. 1.3, 1.5, 1.7, 2.2)
+      if (isCorrect) mcqScore += questionPoints;
       allEvaluations[q.id] = {
         correct_option: q.correct_option,
         user_answer: userAnswer,
-        is_correct: isCorrect
+        is_correct: isCorrect,
+        points_earned: isCorrect ? questionPoints : 0,
+        max_points: questionPoints
       };
     }
 
