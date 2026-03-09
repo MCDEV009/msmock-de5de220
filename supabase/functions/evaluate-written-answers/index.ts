@@ -272,13 +272,15 @@ serve(async (req) => {
 
     if (writtenQuestions.length === 0) {
       // No written questions - just save MCQ results
+      const mcqCorrectCount = mcqQuestions.filter(q => answers[q.id] === q.correct_option).length;
+      const totalMcqMax = mcqQuestions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
       const updateData: any = {
         ai_evaluation: allEvaluations,
-        mcq_score: mcqCorrect,
-        correct_answers: mcqCorrect,
+        mcq_score: mcqScore,
+        correct_answers: mcqCorrectCount,
         written_score: 0,
         evaluation_status: 'completed',
-        score: mcqCorrect
+        score: mcqScore
       };
       
       if (raschData) {
@@ -291,7 +293,7 @@ serve(async (req) => {
         .eq('id', attempt_id);
 
       return new Response(
-        JSON.stringify({ success: true, mcq_score: mcqCorrect, total_score: mcqCorrect, rasch: raschData }),
+        JSON.stringify({ success: true, mcq_score: mcqScore, total_score: mcqScore, rasch: raschData }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
