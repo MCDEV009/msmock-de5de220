@@ -400,7 +400,7 @@ function TestInterfaceContent() {
                   ) : (
                     <Badge variant="default" className="gap-1 bg-accent text-accent-foreground">
                       <PenLine className="h-3 w-3" />
-                      0-{currentQuestion.max_points || 2} ball
+                      0-{currentQuestion.max_points || 3.2} ball
                     </Badge>
                   )}
                 </div>
