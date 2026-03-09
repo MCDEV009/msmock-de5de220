@@ -123,10 +123,10 @@ function ResultsContent() {
   const mcqQuestions = questions.filter(q => q.question_type === 'single_choice');
   const writtenQuestions = questions.filter(q => q.question_type === 'written');
   
-  const mcqScore = attempt.mcq_score || attempt.correct_answers || 0;
+  const mcqScore = attempt.mcq_score || 0;
   const writtenScore = attempt.written_score || 0;
-  const totalMcqPoints = mcqQuestions.length;
-  const totalWrittenPoints = writtenQuestions.reduce((sum, q) => sum + (q.max_points || 2), 0);
+  const totalMcqPoints = mcqQuestions.reduce((sum, q) => sum + (q.points || 1), 0);
+  const totalWrittenPoints = writtenQuestions.reduce((sum, q) => sum + (q.max_points || 3.2), 0);
   const totalScore = mcqScore + writtenScore;
   const totalPoints = totalMcqPoints + totalWrittenPoints;
   
