@@ -168,7 +168,7 @@ function ResultsContent() {
                     <CheckSquare className="h-4 w-4 text-primary" />
                     <span className="text-sm text-muted-foreground">Test savollari</span>
                   </div>
-                  <div className="text-2xl font-bold">{mcqScore}/{totalMcqPoints}</div>
+                  <div className="text-2xl font-bold">{Number(mcqScore).toFixed(1)}/{totalMcqPoints.toFixed(1)}</div>
                 </div>
                 
                 {writtenQuestions.length > 0 && (
