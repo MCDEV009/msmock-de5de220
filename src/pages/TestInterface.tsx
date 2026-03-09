@@ -99,12 +99,9 @@ function TestInterfaceContent() {
         setTimeLeft(remaining);
       }
       
-      // Get questions (using public view that excludes correct answers)
+      // Get questions using secure RPC function (excludes correct answers)
       const { data: questionsData } = await supabase
-        .from('questions_public' as any)
-        .select('*')
-        .eq('test_id', attemptData.test_id)
-        .order('order_index');
+        .rpc('get_public_questions', { p_test_id: attemptData.test_id });
       
       if (questionsData) {
         let processedQuestions = questionsData as unknown as Question[];

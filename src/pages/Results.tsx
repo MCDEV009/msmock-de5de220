@@ -73,10 +73,7 @@ function ResultsContent() {
       }
       
       const { data: questionsData } = await supabase
-        .from('questions_public' as any)
-        .select('*')
-        .eq('test_id', attemptData.test_id)
-        .order('order_index');
+        .rpc('get_public_questions', { p_test_id: attemptData.test_id });
       
       if (questionsData) {
         setQuestions(questionsData as unknown as Question[]);
