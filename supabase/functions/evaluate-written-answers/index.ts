@@ -123,7 +123,16 @@ serve(async (req) => {
     
     if (!attempt_id) {
       return new Response(
-        JSON.stringify({ error: "attempt_id is required" }),
+        JSON.stringify({ error: "Bad request" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate attempt_id format (UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(attempt_id)) {
+      return new Response(
+        JSON.stringify({ error: "Bad request" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -133,7 +142,7 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+      throw new Error("Server configuration error");
     }
     
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
@@ -147,7 +156,7 @@ serve(async (req) => {
     
     if (attemptError || !attempt) {
       return new Response(
-        JSON.stringify({ error: "Attempt not found" }),
+        JSON.stringify({ error: "Not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -155,15 +164,25 @@ serve(async (req) => {
     // Validate: attempt must be finished
     if (attempt.status !== 'finished') {
       return new Response(
-        JSON.stringify({ error: "Attempt is not finished" }),
+        JSON.stringify({ error: "Bad request" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Prevent re-evaluation
-    if (attempt.evaluation_status === 'completed') {
+    if (attempt.evaluation_status === 'completed' || attempt.evaluation_status === 'evaluating') {
       return new Response(
-        JSON.stringify({ error: "Attempt already evaluated" }),
+        JSON.stringify({ error: "Already processed" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Timing check: attempt must have been finished within last 5 minutes
+    const finishedAt = attempt.finished_at ? new Date(attempt.finished_at).getTime() : 0;
+    const now = Date.now();
+    if (now - finishedAt > 5 * 60 * 1000) {
+      return new Response(
+        JSON.stringify({ error: "Request expired" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -481,7 +500,7 @@ Respond with JSON only.`;
   } catch (error) {
     console.error("Evaluation error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
