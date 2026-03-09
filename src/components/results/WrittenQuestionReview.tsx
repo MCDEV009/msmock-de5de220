@@ -38,7 +38,12 @@ export function WrittenQuestionReview({
     ? (language === 'ru' ? evaluation.feedback_ru : evaluation.feedback_uz)
     : null;
 
-  const maxPoints = question.max_points || 2;
+  const maxPoints = question.max_points || 3.2;
+  const evalAny = evaluation as any;
+  const scoreA = evalAny?.score_a;
+  const scoreB = evalAny?.score_b;
+  const maxPointsA = evalAny?.max_points_a || 1.5;
+  const maxPointsB = evalAny?.max_points_b || 1.7;
   const scorePercentage = evaluation ? (evaluation.score / maxPoints) * 100 : 0;
 
   const getScoreColor = (score: number, max: number) => {
@@ -61,9 +66,16 @@ export function WrittenQuestionReview({
           </div>
           
           {evaluationStatus === 'completed' && evaluation ? (
-            <div className={`flex items-center gap-2 ${getScoreColor(evaluation.score, maxPoints)}`}>
-              <span className="text-2xl font-bold">{evaluation.score}</span>
-              <span className="text-sm text-muted-foreground">/ {maxPoints}</span>
+            <div className="text-right">
+              <div className={`flex items-center gap-2 ${getScoreColor(evaluation.score, maxPoints)}`}>
+                <span className="text-2xl font-bold">{evaluation.score.toFixed(1)}</span>
+                <span className="text-sm text-muted-foreground">/ {maxPoints.toFixed(1)}</span>
+              </div>
+              {scoreA !== undefined && scoreB !== undefined && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  a: {scoreA.toFixed(1)}/{maxPointsA} | b: {scoreB.toFixed(1)}/{maxPointsB}
+                </div>
+              )}
             </div>
           ) : evaluationStatus === 'evaluating' ? (
             <div className="flex items-center gap-2 text-muted-foreground">

@@ -15,6 +15,8 @@ interface WrittenQuestionFormData {
   rubric_uz: string;
   rubric_ru: string;
   max_points: number;
+  points_a?: number;
+  points_b?: number;
   image_url: string;
 }
 
@@ -164,20 +166,32 @@ export function WrittenQuestionForm({ form, onChange }: WrittenQuestionFormProps
         />
       </div>
 
-      {/* Max Points */}
-      <div className="space-y-2">
-        <Label>Maksimal ball</Label>
-        <Input
-          type="number"
-          value={form.max_points}
-          onChange={(e) => onChange({ max_points: parseInt(e.target.value) || 2 })}
-          min={1}
-          max={5}
-        />
-        <p className="text-xs text-muted-foreground">
-          Milliy Sertifikat formati uchun odatda 2 ball (har shart uchun 1 ball)
-        </p>
+      {/* Points per condition */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>a-shart balli</Label>
+          <Input
+            type="number"
+            step="0.1"
+            value={form.points_a ?? 1.5}
+            onChange={(e) => onChange({ points_a: parseFloat(e.target.value) || 1.5 })}
+            min={0.1}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>b-shart balli</Label>
+          <Input
+            type="number"
+            step="0.1"
+            value={form.points_b ?? 1.7}
+            onChange={(e) => onChange({ points_b: parseFloat(e.target.value) || 1.7 })}
+            min={0.1}
+          />
+        </div>
       </div>
+      <p className="text-xs text-muted-foreground">
+        Jami maksimal ball: {((form.points_a ?? 1.5) + (form.points_b ?? 1.7)).toFixed(1)} (a-shart + b-shart)
+      </p>
     </div>
   );
 }

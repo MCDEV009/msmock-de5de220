@@ -55,6 +55,8 @@ export type Database = {
           options: Json
           order_index: number
           points: number
+          points_a: number | null
+          points_b: number | null
           question_text_en: string | null
           question_text_ru: string | null
           question_text_uz: string
@@ -79,6 +81,8 @@ export type Database = {
           options?: Json
           order_index?: number
           points?: number
+          points_a?: number | null
+          points_b?: number | null
           question_text_en?: string | null
           question_text_ru?: string | null
           question_text_uz: string
@@ -103,6 +107,8 @@ export type Database = {
           options?: Json
           order_index?: number
           points?: number
+          points_a?: number | null
+          points_b?: number | null
           question_text_en?: string | null
           question_text_ru?: string | null
           question_text_uz?: string

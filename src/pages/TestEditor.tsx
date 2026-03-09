@@ -76,6 +76,8 @@ interface WrittenFormData {
   rubric_uz: string;
   rubric_ru: string;
   max_points: number;
+  points_a?: number;
+  points_b?: number;
   image_url: string;
 }
 
@@ -116,7 +118,9 @@ function TestEditorContent() {
     model_answer_ru: '',
     rubric_uz: '',
     rubric_ru: '',
-    max_points: 2,
+    max_points: 3.2,
+    points_a: 1.5,
+    points_b: 1.7,
     image_url: ''
   });
 
@@ -181,7 +185,9 @@ function TestEditorContent() {
       model_answer_ru: '',
       rubric_uz: '',
       rubric_ru: '',
-      max_points: 2,
+      max_points: 3.2,
+      points_a: 1.5,
+      points_b: 1.7,
       image_url: ''
     });
     setEditingQuestion(null);
@@ -214,7 +220,9 @@ function TestEditorContent() {
           model_answer_ru: question.model_answer_ru || '',
           rubric_uz: question.rubric_uz || '',
           rubric_ru: question.rubric_ru || '',
-          max_points: question.max_points || 2,
+          max_points: question.max_points || 3.2,
+          points_a: (question as any).points_a ?? 1.5,
+          points_b: (question as any).points_b ?? 1.7,
           image_url: question.image_url || ''
         });
       }
@@ -284,7 +292,9 @@ function TestEditorContent() {
       rubric_uz: writtenForm.rubric_uz.trim() || null,
       rubric_ru: writtenForm.rubric_ru.trim() || null,
       image_url: writtenForm.image_url.trim() || null,
-      max_points: writtenForm.max_points,
+      max_points: (writtenForm.points_a ?? 1.5) + (writtenForm.points_b ?? 1.7),
+      points_a: writtenForm.points_a ?? 1.5,
+      points_b: writtenForm.points_b ?? 1.7,
       points: 0,
       options: [],
       correct_option: 0
@@ -484,13 +494,17 @@ function TestEditorContent() {
                         </div>
                         
                         <div className="space-y-2">
-                          <Label>Ball</Label>
+                          <Label>Ball (qiyinchilik darajasi)</Label>
                           <Input
                             type="number"
+                            step="0.1"
                             value={mcqForm.points}
-                            onChange={(e) => setMcqForm({ ...mcqForm, points: parseInt(e.target.value) || 1 })}
-                            min={1}
+                            onChange={(e) => setMcqForm({ ...mcqForm, points: parseFloat(e.target.value) || 1 })}
+                            min={0.1}
                           />
+                          <p className="text-xs text-muted-foreground">
+                            Masalan: oson=1.3, o'rtacha=1.5, qiyin=1.7, juda qiyin=2.2
+                          </p>
                         </div>
                       </div>
                     </>

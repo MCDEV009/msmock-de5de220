@@ -198,18 +198,21 @@ serve(async (req) => {
     const writtenAnswers = attempt.written_answers || {};
     const isMilliySertifikat = attempt.tests?.test_format === 'milliy_sertifikat';
 
-    // --- Compute MCQ scores server-side ---
-    let mcqCorrect = 0;
+    // --- Compute MCQ scores server-side (difficulty-based points) ---
+    let mcqScore = 0;
     const allEvaluations: Record<string, any> = {};
 
     for (const q of mcqQuestions) {
       const userAnswer = answers[q.id];
       const isCorrect = userAnswer === q.correct_option;
-      if (isCorrect) mcqCorrect++;
+      const questionPoints = q.points || 1; // difficulty-based points (e.g. 1.3, 1.5, 1.7, 2.2)
+      if (isCorrect) mcqScore += questionPoints;
       allEvaluations[q.id] = {
         correct_option: q.correct_option,
         user_answer: userAnswer,
-        is_correct: isCorrect
+        is_correct: isCorrect,
+        points_earned: isCorrect ? questionPoints : 0,
+        max_points: questionPoints
       };
     }
 
@@ -269,13 +272,15 @@ serve(async (req) => {
 
     if (writtenQuestions.length === 0) {
       // No written questions - just save MCQ results
+      const mcqCorrectCount = mcqQuestions.filter(q => answers[q.id] === q.correct_option).length;
+      const totalMcqMax = mcqQuestions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
       const updateData: any = {
         ai_evaluation: allEvaluations,
-        mcq_score: mcqCorrect,
-        correct_answers: mcqCorrect,
+        mcq_score: mcqScore,
+        correct_answers: mcqCorrectCount,
         written_score: 0,
         evaluation_status: 'completed',
-        score: mcqCorrect
+        score: mcqScore
       };
       
       if (raschData) {
@@ -288,7 +293,7 @@ serve(async (req) => {
         .eq('id', attempt_id);
 
       return new Response(
-        JSON.stringify({ success: true, mcq_score: mcqCorrect, total_score: mcqCorrect, rasch: raschData }),
+        JSON.stringify({ success: true, mcq_score: mcqScore, total_score: mcqScore, rasch: raschData }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -308,6 +313,10 @@ serve(async (req) => {
         continue;
       }
       
+      const pointsA = question.points_a || 1.5;
+      const pointsB = question.points_b || 1.7;
+      const totalMaxPoints = pointsA + pointsB;
+      
       const systemPrompt = `You are an expert exam evaluator for the Uzbekistan National Certificate (Milliy Sertifikat) exam.
 
 EVALUATION METHOD: RUSH (Rubric-based, Understanding-focused, Structured feedback, Human-like judgment)
@@ -317,17 +326,18 @@ CRITICAL RULES:
 2. PARTIAL CREDIT - give partial points for partially correct answers
 3. SPELLING/GRAMMAR - minor errors should NOT heavily reduce score
 4. STRUCTURED FEEDBACK - provide clear strengths and missing points
+5. Evaluate a-shart and b-shart SEPARATELY
 
-SCORING SCALE (0-2 points):
-- 0 points: No answer, completely wrong, or irrelevant
-- 0.5 points: Shows some understanding but mostly incorrect or incomplete
-- 1 point: Partially correct, demonstrates basic understanding
-- 1.5 points: Mostly correct with minor gaps
-- 2 points: Fully correct, demonstrates complete understanding
+SCORING:
+- a-shart: 0 to ${pointsA} ball (${pointsA} = to'liq to'g'ri)
+- b-shart: 0 to ${pointsB} ball (${pointsB} = to'liq to'g'ri)
+- Jami: 0 to ${totalMaxPoints} ball
 
 You MUST respond with a JSON object in this exact format:
 {
-  "score": <number between 0 and 2>,
+  "score_a": <number between 0 and ${pointsA}>,
+  "score_b": <number between 0 and ${pointsB}>,
+  "score": <total = score_a + score_b>,
   "feedback_uz": "<feedback in Uzbek>",
   "feedback_ru": "<feedback in Russian>",
   "strengths": ["<strength 1>", "<strength 2>"],
@@ -408,8 +418,14 @@ Respond with JSON only.`;
           jsonStr = jsonMatch[1].trim();
         }
         
-        const evaluation: EvaluationResult = JSON.parse(jsonStr);
-        evaluation.score = Math.max(0, Math.min(question.max_points || 2, evaluation.score));
+        const evaluation = JSON.parse(jsonStr);
+        const pA = question.points_a || 1.5;
+        const pB = question.points_b || 1.7;
+        evaluation.score_a = Math.max(0, Math.min(pA, evaluation.score_a || 0));
+        evaluation.score_b = Math.max(0, Math.min(pB, evaluation.score_b || 0));
+        evaluation.score = evaluation.score_a + evaluation.score_b;
+        evaluation.max_points_a = pA;
+        evaluation.max_points_b = pB;
         
         allEvaluations[question.id] = evaluation;
         totalWrittenScore += evaluation.score;
@@ -432,13 +448,14 @@ Respond with JSON only.`;
     }
     
     // Update attempt with all evaluation results
-    const totalScore = mcqCorrect + totalWrittenScore;
+    const mcqCorrectCount = mcqQuestions.filter(q => answers[q.id] === q.correct_option).length;
+    const totalScore = mcqScore + totalWrittenScore;
     const { error: updateError } = await supabase
       .from('test_attempts')
       .update({
         ai_evaluation: allEvaluations,
-        mcq_score: mcqCorrect,
-        correct_answers: mcqCorrect,
+        mcq_score: mcqScore,
+        correct_answers: mcqCorrectCount,
         written_score: totalWrittenScore,
         evaluation_status: 'completed',
         score: totalScore
@@ -453,7 +470,7 @@ Respond with JSON only.`;
     return new Response(
       JSON.stringify({
         success: true,
-        mcq_score: mcqCorrect,
+        mcq_score: mcqScore,
         written_score: totalWrittenScore,
         total_score: totalScore,
         rasch: raschData

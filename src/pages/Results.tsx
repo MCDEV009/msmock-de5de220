@@ -123,10 +123,10 @@ function ResultsContent() {
   const mcqQuestions = questions.filter(q => q.question_type === 'single_choice');
   const writtenQuestions = questions.filter(q => q.question_type === 'written');
   
-  const mcqScore = attempt.mcq_score || attempt.correct_answers || 0;
+  const mcqScore = attempt.mcq_score || 0;
   const writtenScore = attempt.written_score || 0;
-  const totalMcqPoints = mcqQuestions.length;
-  const totalWrittenPoints = writtenQuestions.reduce((sum, q) => sum + (q.max_points || 2), 0);
+  const totalMcqPoints = mcqQuestions.reduce((sum, q) => sum + (q.points || 1), 0);
+  const totalWrittenPoints = writtenQuestions.reduce((sum, q) => sum + (q.max_points || 3.2), 0);
   const totalScore = mcqScore + writtenScore;
   const totalPoints = totalMcqPoints + totalWrittenPoints;
   
@@ -168,7 +168,7 @@ function ResultsContent() {
                     <CheckSquare className="h-4 w-4 text-primary" />
                     <span className="text-sm text-muted-foreground">Test savollari</span>
                   </div>
-                  <div className="text-2xl font-bold">{mcqScore}/{totalMcqPoints}</div>
+                  <div className="text-2xl font-bold">{Number(mcqScore).toFixed(1)}/{totalMcqPoints.toFixed(1)}</div>
                 </div>
                 
                 {writtenQuestions.length > 0 && (
@@ -295,6 +295,9 @@ function ResultsContent() {
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="shrink-0">#{index + 1}</Badge>
                           <span className="truncate font-medium">{questionText}</span>
+                          <Badge variant="secondary" className="shrink-0 text-xs">
+                            {isCorrect ? (question.points || 1) : 0}/{question.points || 1} ball
+                          </Badge>
                         </div>
                       </div>
                       {isExpanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
