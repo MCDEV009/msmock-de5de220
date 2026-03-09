@@ -15,6 +15,8 @@ interface WrittenQuestionFormData {
   rubric_uz: string;
   rubric_ru: string;
   max_points: number;
+  points_a?: number;
+  points_b?: number;
   image_url: string;
 }
 
