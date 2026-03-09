@@ -292,7 +292,9 @@ function TestEditorContent() {
       rubric_uz: writtenForm.rubric_uz.trim() || null,
       rubric_ru: writtenForm.rubric_ru.trim() || null,
       image_url: writtenForm.image_url.trim() || null,
-      max_points: writtenForm.max_points,
+      max_points: (writtenForm.points_a ?? 1.5) + (writtenForm.points_b ?? 1.7),
+      points_a: writtenForm.points_a ?? 1.5,
+      points_b: writtenForm.points_b ?? 1.7,
       points: 0,
       options: [],
       correct_option: 0
