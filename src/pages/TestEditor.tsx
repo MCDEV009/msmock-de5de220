@@ -220,7 +220,9 @@ function TestEditorContent() {
           model_answer_ru: question.model_answer_ru || '',
           rubric_uz: question.rubric_uz || '',
           rubric_ru: question.rubric_ru || '',
-          max_points: question.max_points || 2,
+          max_points: question.max_points || 3.2,
+          points_a: (question as any).points_a ?? 1.5,
+          points_b: (question as any).points_b ?? 1.7,
           image_url: question.image_url || ''
         });
       }
