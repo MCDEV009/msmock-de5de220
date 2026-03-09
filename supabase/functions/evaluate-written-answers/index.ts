@@ -418,8 +418,14 @@ Respond with JSON only.`;
           jsonStr = jsonMatch[1].trim();
         }
         
-        const evaluation: EvaluationResult = JSON.parse(jsonStr);
-        evaluation.score = Math.max(0, Math.min(question.max_points || 2, evaluation.score));
+        const evaluation = JSON.parse(jsonStr);
+        const pA = question.points_a || 1.5;
+        const pB = question.points_b || 1.7;
+        evaluation.score_a = Math.max(0, Math.min(pA, evaluation.score_a || 0));
+        evaluation.score_b = Math.max(0, Math.min(pB, evaluation.score_b || 0));
+        evaluation.score = evaluation.score_a + evaluation.score_b;
+        evaluation.max_points_a = pA;
+        evaluation.max_points_b = pB;
         
         allEvaluations[question.id] = evaluation;
         totalWrittenScore += evaluation.score;
