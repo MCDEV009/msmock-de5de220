@@ -313,6 +313,10 @@ serve(async (req) => {
         continue;
       }
       
+      const pointsA = question.points_a || 1.5;
+      const pointsB = question.points_b || 1.7;
+      const totalMaxPoints = pointsA + pointsB;
+      
       const systemPrompt = `You are an expert exam evaluator for the Uzbekistan National Certificate (Milliy Sertifikat) exam.
 
 EVALUATION METHOD: RUSH (Rubric-based, Understanding-focused, Structured feedback, Human-like judgment)
@@ -322,17 +326,18 @@ CRITICAL RULES:
 2. PARTIAL CREDIT - give partial points for partially correct answers
 3. SPELLING/GRAMMAR - minor errors should NOT heavily reduce score
 4. STRUCTURED FEEDBACK - provide clear strengths and missing points
+5. Evaluate a-shart and b-shart SEPARATELY
 
-SCORING SCALE (0-2 points):
-- 0 points: No answer, completely wrong, or irrelevant
-- 0.5 points: Shows some understanding but mostly incorrect or incomplete
-- 1 point: Partially correct, demonstrates basic understanding
-- 1.5 points: Mostly correct with minor gaps
-- 2 points: Fully correct, demonstrates complete understanding
+SCORING:
+- a-shart: 0 to ${pointsA} ball (${pointsA} = to'liq to'g'ri)
+- b-shart: 0 to ${pointsB} ball (${pointsB} = to'liq to'g'ri)
+- Jami: 0 to ${totalMaxPoints} ball
 
 You MUST respond with a JSON object in this exact format:
 {
-  "score": <number between 0 and 2>,
+  "score_a": <number between 0 and ${pointsA}>,
+  "score_b": <number between 0 and ${pointsB}>,
+  "score": <total = score_a + score_b>,
   "feedback_uz": "<feedback in Uzbek>",
   "feedback_ru": "<feedback in Russian>",
   "strengths": ["<strength 1>", "<strength 2>"],
