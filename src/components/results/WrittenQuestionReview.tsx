@@ -66,9 +66,16 @@ export function WrittenQuestionReview({
           </div>
           
           {evaluationStatus === 'completed' && evaluation ? (
-            <div className={`flex items-center gap-2 ${getScoreColor(evaluation.score, maxPoints)}`}>
-              <span className="text-2xl font-bold">{evaluation.score}</span>
-              <span className="text-sm text-muted-foreground">/ {maxPoints}</span>
+            <div className="text-right">
+              <div className={`flex items-center gap-2 ${getScoreColor(evaluation.score, maxPoints)}`}>
+                <span className="text-2xl font-bold">{evaluation.score.toFixed(1)}</span>
+                <span className="text-sm text-muted-foreground">/ {maxPoints.toFixed(1)}</span>
+              </div>
+              {scoreA !== undefined && scoreB !== undefined && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  a: {scoreA.toFixed(1)}/{maxPointsA} | b: {scoreB.toFixed(1)}/{maxPointsB}
+                </div>
+              )}
             </div>
           ) : evaluationStatus === 'evaluating' ? (
             <div className="flex items-center gap-2 text-muted-foreground">
