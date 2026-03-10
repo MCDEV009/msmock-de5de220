@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ExamRulesModal } from '@/components/test/ExamRulesModal';
-import { ArrowRight, User, Clock, FileQuestion, Copy, CheckCircle, Award } from 'lucide-react';
+import { ArrowRight, User, Clock, FileQuestion, Copy, CheckCircle, Award, CalendarClock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 function generateParticipantId(): string {
@@ -35,6 +35,7 @@ function TestEntryContent() {
   const [copied, setCopied] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     async function fetchTest() {
@@ -64,6 +65,12 @@ function TestEntryContent() {
     fetchTest();
   }, [testId]);
 
+  // Update clock every second for countdown
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleCopyId = () => {
     navigator.clipboard.writeText(participantId);
     setCopied(true);
@@ -71,9 +78,32 @@ function TestEntryContent() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Scheduled test logic
+  const scheduledStart = test?.scheduled_start ? new Date(test.scheduled_start).getTime() : null;
+  const registrationDeadline = scheduledStart ? scheduledStart - 30 * 60 * 1000 : null;
+  const isRegistrationClosed = registrationDeadline ? now > registrationDeadline : false;
+  const isTestNotStarted = scheduledStart ? now < scheduledStart : false;
+  const timeUntilStart = scheduledStart ? Math.max(0, Math.floor((scheduledStart - now) / 1000)) : 0;
+
+  const formatCountdown = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
   const handleProceed = () => {
     if (!fullName.trim()) {
       toast.error(t('enterFullName'));
+      return;
+    }
+    if (isRegistrationClosed && isTestNotStarted) {
+      toast.error("Ro'yxatdan o'tish vaqti tugagan! Testga 30 daqiqa oldin ro'yxatdan o'tish kerak edi.");
+      return;
+    }
+    if (isTestNotStarted) {
+      // Allow registration but show rules, test will start at scheduled time
+      setShowRulesModal(true);
       return;
     }
     setShowRulesModal(true);
@@ -183,6 +213,29 @@ function TestEntryContent() {
                 1-35: Test savollari (1 ball) • 36-45: Yozma savollar (0-2 ball)
               </p>
             )}
+            {scheduledStart && (
+              <div className="mt-3 flex flex-col items-center gap-1">
+                <Badge variant="outline" className="gap-1">
+                  <CalendarClock className="h-3 w-3" />
+                  {new Date(scheduledStart).toLocaleString('uz-UZ', { 
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                  })}
+                </Badge>
+                {isTestNotStarted && (
+                  <div className="text-center mt-2">
+                    <p className="text-sm font-mono font-bold text-primary">{formatCountdown(timeUntilStart)}</p>
+                    <p className="text-xs text-muted-foreground">boshlanishigacha</p>
+                  </div>
+                )}
+                {isRegistrationClosed && isTestNotStarted && (
+                  <div className="flex items-center gap-1 text-destructive text-xs mt-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Ro'yxatdan o'tish vaqti tugagan
+                  </div>
+                )}
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-6 pt-4">
             <div className="space-y-2">
@@ -224,10 +277,10 @@ function TestEntryContent() {
 
             <Button
               onClick={handleProceed}
-              disabled={!fullName.trim() || submitting}
+              disabled={!fullName.trim() || submitting || (isRegistrationClosed && isTestNotStarted)}
               className="w-full h-12 text-lg gradient-primary border-0 shadow-soft hover:shadow-glow transition-shadow"
             >
-              {submitting ? t('loading') : t('startTest')}
+              {submitting ? t('loading') : isTestNotStarted ? "Ro'yxatdan o'tish" : t('startTest')}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </CardContent>

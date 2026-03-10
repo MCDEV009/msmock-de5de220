@@ -109,7 +109,8 @@ function AdminContent() {
     randomize_questions: true,
     randomize_options: true,
     negative_marking: false,
-    test_format: 'standard' as 'standard' | 'milliy_sertifikat'
+    test_format: 'standard' as 'standard' | 'milliy_sertifikat',
+    scheduled_start: ''
   });
   
   // Questions state
@@ -234,6 +235,7 @@ function AdminContent() {
       .insert({
         ...testForm,
         subject_id: testForm.subject_id || null,
+        scheduled_start: testForm.scheduled_start || null,
         created_by: user?.id
       })
       .select()
@@ -251,12 +253,13 @@ function AdminContent() {
         description_uz: '',
         subject_id: '',
         visibility: 'public',
-        duration_minutes: 120,
+        duration_minutes: 150,
         allow_retry: false,
         randomize_questions: true,
         randomize_options: true,
         negative_marking: false,
-        test_format: 'standard'
+        test_format: 'standard',
+        scheduled_start: ''
       });
       // Refresh tests
       window.location.reload();
@@ -710,6 +713,19 @@ function AdminContent() {
                         </Select>
                         <p className="text-xs text-muted-foreground">
                           Milliy Sertifikat formatida 35 ta test savoli va 10 ta yozma savol bo'ladi
+                        </p>
+                      </div>
+
+                      {/* Scheduled start time */}
+                      <div className="space-y-2">
+                        <Label>Boshlanish vaqti (jadval)</Label>
+                        <Input
+                          type="datetime-local"
+                          value={testForm.scheduled_start}
+                          onChange={(e) => setTestForm({ ...testForm, scheduled_start: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Test aniq vaqtda boshlanadi. Ishtirokchilar 30 daqiqa oldin ro'yxatdan o'tishlari shart.
                         </p>
                       </div>
                       

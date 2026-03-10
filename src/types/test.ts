@@ -13,6 +13,7 @@ export interface Test {
   randomize_options: boolean;
   negative_marking: boolean;
   test_format: 'standard' | 'milliy_sertifikat';
+  scheduled_start?: string;
   created_by?: string;
   created_at: string;
   updated_at: string;

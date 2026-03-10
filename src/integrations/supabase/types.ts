@@ -258,6 +258,7 @@ export type Database = {
           negative_marking: boolean
           randomize_options: boolean
           randomize_questions: boolean
+          scheduled_start: string | null
           subject_id: string | null
           test_code: string | null
           test_format: string | null
@@ -277,6 +278,7 @@ export type Database = {
           negative_marking?: boolean
           randomize_options?: boolean
           randomize_questions?: boolean
+          scheduled_start?: string | null
           subject_id?: string | null
           test_code?: string | null
           test_format?: string | null
@@ -296,6 +298,7 @@ export type Database = {
           negative_marking?: boolean
           randomize_options?: boolean
           randomize_questions?: boolean
+          scheduled_start?: string | null
           subject_id?: string | null
           test_code?: string | null
           test_format?: string | null
