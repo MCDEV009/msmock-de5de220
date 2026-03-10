@@ -236,6 +236,12 @@ function TestEntryContent() {
                 )}
               </div>
             )}
+          </CardHeader>
+          <CardContent className="space-y-6 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                {t('fullName')}
               </Label>
               <Input
                 id="fullName"
