@@ -213,12 +213,29 @@ function TestEntryContent() {
                 1-35: Test savollari (1 ball) • 36-45: Yozma savollar (0-2 ball)
               </p>
             )}
-          </CardHeader>
-          <CardContent className="space-y-6 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                {t('fullName')}
+            {scheduledStart && (
+              <div className="mt-3 flex flex-col items-center gap-1">
+                <Badge variant="outline" className="gap-1">
+                  <CalendarClock className="h-3 w-3" />
+                  {new Date(scheduledStart).toLocaleString('uz-UZ', { 
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                  })}
+                </Badge>
+                {isTestNotStarted && (
+                  <div className="text-center mt-2">
+                    <p className="text-sm font-mono font-bold text-primary">{formatCountdown(timeUntilStart)}</p>
+                    <p className="text-xs text-muted-foreground">boshlanishigacha</p>
+                  </div>
+                )}
+                {isRegistrationClosed && isTestNotStarted && (
+                  <div className="flex items-center gap-1 text-destructive text-xs mt-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Ro'yxatdan o'tish vaqti tugagan
+                  </div>
+                )}
+              </div>
+            )}
               </Label>
               <Input
                 id="fullName"
