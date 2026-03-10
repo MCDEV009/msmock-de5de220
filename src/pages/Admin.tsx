@@ -109,7 +109,8 @@ function AdminContent() {
     randomize_questions: true,
     randomize_options: true,
     negative_marking: false,
-    test_format: 'standard' as 'standard' | 'milliy_sertifikat'
+    test_format: 'standard' as 'standard' | 'milliy_sertifikat',
+    scheduled_start: ''
   });
   
   // Questions state
