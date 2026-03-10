@@ -35,6 +35,7 @@ function TestEntryContent() {
   const [copied, setCopied] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     async function fetchTest() {
