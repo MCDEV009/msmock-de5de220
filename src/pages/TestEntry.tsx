@@ -65,6 +65,12 @@ function TestEntryContent() {
     fetchTest();
   }, [testId]);
 
+  // Update clock every second for countdown
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleCopyId = () => {
     navigator.clipboard.writeText(participantId);
     setCopied(true);
