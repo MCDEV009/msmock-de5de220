@@ -78,9 +78,32 @@ function TestEntryContent() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Scheduled test logic
+  const scheduledStart = test?.scheduled_start ? new Date(test.scheduled_start).getTime() : null;
+  const registrationDeadline = scheduledStart ? scheduledStart - 30 * 60 * 1000 : null;
+  const isRegistrationClosed = registrationDeadline ? now > registrationDeadline : false;
+  const isTestNotStarted = scheduledStart ? now < scheduledStart : false;
+  const timeUntilStart = scheduledStart ? Math.max(0, Math.floor((scheduledStart - now) / 1000)) : 0;
+
+  const formatCountdown = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
   const handleProceed = () => {
     if (!fullName.trim()) {
       toast.error(t('enterFullName'));
+      return;
+    }
+    if (isRegistrationClosed && isTestNotStarted) {
+      toast.error("Ro'yxatdan o'tish vaqti tugagan! Testga 30 daqiqa oldin ro'yxatdan o'tish kerak edi.");
+      return;
+    }
+    if (isTestNotStarted) {
+      // Allow registration but show rules, test will start at scheduled time
+      setShowRulesModal(true);
       return;
     }
     setShowRulesModal(true);
