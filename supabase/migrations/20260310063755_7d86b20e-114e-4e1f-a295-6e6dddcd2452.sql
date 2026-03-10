@@ -1,0 +1,1 @@
+ALTER TABLE public.tests ADD COLUMN scheduled_start timestamp with time zone DEFAULT NULL;
