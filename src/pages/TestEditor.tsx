@@ -494,16 +494,8 @@ function TestEditorContent() {
                         </div>
                         
                         <div className="space-y-2">
-                          <Label>Ball (qiyinchilik darajasi)</Label>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={mcqForm.points}
-                            onChange={(e) => setMcqForm({ ...mcqForm, points: parseFloat(e.target.value) || 1 })}
-                            min={0.1}
-                          />
                           <p className="text-xs text-muted-foreground">
-                            Masalan: oson=1.3, o'rtacha=1.5, qiyin=1.7, juda qiyin=2.2
+                            ✨ Ball avtomatik belgilanadi (Rasch modeli asosida)
                           </p>
                         </div>
                       </div>
