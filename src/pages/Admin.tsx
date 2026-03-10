@@ -729,6 +729,7 @@ function AdminContent() {
                         </p>
                       </div>
                       
+                      <div className="space-y-4 pt-4 border-t">
                         <h4 className="font-medium">Sozlamalar</h4>
                         <div className="flex items-center justify-between">
                           <Label>Qayta topshirishga ruxsat</Label>
