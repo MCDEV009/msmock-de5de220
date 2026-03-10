@@ -253,12 +253,13 @@ function AdminContent() {
         description_uz: '',
         subject_id: '',
         visibility: 'public',
-        duration_minutes: 120,
+        duration_minutes: 150,
         allow_retry: false,
         randomize_questions: true,
         randomize_options: true,
         negative_marking: false,
-        test_format: 'standard'
+        test_format: 'standard',
+        scheduled_start: ''
       });
       // Refresh tests
       window.location.reload();
