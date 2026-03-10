@@ -72,9 +72,9 @@ serve(async (req) => {
     console.log("Generating questions:", { subject, questionType, difficulty, count, topic, language });
 
     const difficultyDescriptions = {
-      easy: "simple, straightforward questions suitable for beginners",
-      medium: "moderate difficulty questions requiring good understanding",
-      hard: "challenging questions requiring deep knowledge and analysis"
+      easy: "moderate difficulty questions that test solid understanding — avoid trivially simple questions that can be answered without real knowledge",
+      medium: "challenging questions requiring good understanding and analytical thinking — questions should make students think carefully",
+      hard: "very challenging questions requiring deep knowledge, critical analysis, and multi-step reasoning"
     };
 
     const languageInstructions = {

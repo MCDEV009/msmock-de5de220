@@ -277,10 +277,10 @@ function TestEntryContent() {
 
             <Button
               onClick={handleProceed}
-              disabled={!fullName.trim() || submitting}
+              disabled={!fullName.trim() || submitting || (isRegistrationClosed && isTestNotStarted)}
               className="w-full h-12 text-lg gradient-primary border-0 shadow-soft hover:shadow-glow transition-shadow"
             >
-              {submitting ? t('loading') : t('startTest')}
+              {submitting ? t('loading') : isTestNotStarted ? "Ro'yxatdan o'tish" : t('startTest')}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </CardContent>
