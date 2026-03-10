@@ -235,6 +235,7 @@ function AdminContent() {
       .insert({
         ...testForm,
         subject_id: testForm.subject_id || null,
+        scheduled_start: testForm.scheduled_start || null,
         created_by: user?.id
       })
       .select()
