@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ExamRulesModal } from '@/components/test/ExamRulesModal';
-import { ArrowRight, User, Clock, FileQuestion, Copy, CheckCircle, Award } from 'lucide-react';
+import { ArrowRight, User, Clock, FileQuestion, Copy, CheckCircle, Award, CalendarClock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 function generateParticipantId(): string {

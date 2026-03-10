@@ -715,8 +715,20 @@ function AdminContent() {
                           Milliy Sertifikat formatida 35 ta test savoli va 10 ta yozma savol bo'ladi
                         </p>
                       </div>
+
+                      {/* Scheduled start time */}
+                      <div className="space-y-2">
+                        <Label>Boshlanish vaqti (jadval)</Label>
+                        <Input
+                          type="datetime-local"
+                          value={testForm.scheduled_start}
+                          onChange={(e) => setTestForm({ ...testForm, scheduled_start: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Test aniq vaqtda boshlanadi. Ishtirokchilar 30 daqiqa oldin ro'yxatdan o'tishlari shart.
+                        </p>
+                      </div>
                       
-                      <div className="space-y-4 pt-4 border-t">
                         <h4 className="font-medium">Sozlamalar</h4>
                         <div className="flex items-center justify-between">
                           <Label>Qayta topshirishga ruxsat</Label>
