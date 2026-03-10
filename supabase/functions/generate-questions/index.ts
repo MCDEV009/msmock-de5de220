@@ -96,8 +96,9 @@ Rules:
 3. Include only one correct answer
 4. Avoid trick questions or ambiguous wording
 5. Questions should test genuine understanding, not just memorization
-6. ${languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.uz}
-7. Do not include inappropriate, offensive, or harmful content`;
+6. CRITICAL: Do NOT generate trivially easy questions. Every question should require real subject knowledge. Avoid questions that can be answered by common sense alone.
+7. ${languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.uz}
+8. Do not include inappropriate, offensive, or harmful content`;
 
       userPrompt = `Generate ${count} multiple choice questions for the subject "${subject}".
 Difficulty level: ${difficultyDescriptions[difficulty]}
