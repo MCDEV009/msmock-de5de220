@@ -166,31 +166,9 @@ export function WrittenQuestionForm({ form, onChange }: WrittenQuestionFormProps
         />
       </div>
 
-      {/* Points per condition */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>a-shart balli</Label>
-          <Input
-            type="number"
-            step="0.1"
-            value={form.points_a ?? 1.5}
-            onChange={(e) => onChange({ points_a: parseFloat(e.target.value) || 1.5 })}
-            min={0.1}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>b-shart balli</Label>
-          <Input
-            type="number"
-            step="0.1"
-            value={form.points_b ?? 1.7}
-            onChange={(e) => onChange({ points_b: parseFloat(e.target.value) || 1.7 })}
-            min={0.1}
-          />
-        </div>
-      </div>
+      {/* Points info */}
       <p className="text-xs text-muted-foreground">
-        Jami maksimal ball: {((form.points_a ?? 1.5) + (form.points_b ?? 1.7)).toFixed(1)} (a-shart + b-shart)
+        ✨ Ball AI tomonidan avtomatik belgilanadi. Standart: a-shart = 1.5, b-shart = 1.7, jami = 3.2
       </p>
     </div>
   );
