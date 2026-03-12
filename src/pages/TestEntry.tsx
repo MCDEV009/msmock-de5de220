@@ -83,6 +83,8 @@ function TestEntryContent() {
   const registrationDeadline = scheduledStart ? scheduledStart - 30 * 60 * 1000 : null;
   const isRegistrationClosed = registrationDeadline ? now > registrationDeadline : false;
   const isTestNotStarted = scheduledStart ? now < scheduledStart : false;
+  const testEndTime = scheduledStart && test ? scheduledStart + test.duration_minutes * 60 * 1000 : null;
+  const isTestFinished = testEndTime ? now > testEndTime : false;
   const timeUntilStart = scheduledStart ? Math.max(0, Math.floor((scheduledStart - now) / 1000)) : 0;
 
   const formatCountdown = (seconds: number) => {
