@@ -177,10 +177,10 @@ serve(async (req) => {
       );
     }
 
-    // Timing check: attempt must have been finished within last 5 minutes
+    // Timing check: attempt must have been finished within last 30 minutes
     const finishedAt = attempt.finished_at ? new Date(attempt.finished_at).getTime() : 0;
     const now = Date.now();
-    if (now - finishedAt > 5 * 60 * 1000) {
+    if (now - finishedAt > 30 * 60 * 1000) {
       return new Response(
         JSON.stringify({ error: "Request expired" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -286,44 +286,64 @@ serve(async (req) => {
       }
     }
 
-    // --- Evaluate written questions with AI ---
+    // --- Evaluate written questions ---
     let totalWrittenScore = 0;
 
-    if (writtenQuestions.length === 0) {
-      // No written questions - just save MCQ results
+    // Check if ANY written question has an actual answer
+    const hasAnyWrittenAnswer = writtenQuestions.some(q => {
+      const ans = writtenAnswers[q.id] as WrittenAnswer | undefined;
+      return ans && (ans.answer_a?.trim() || ans.answer_b?.trim());
+    });
+
+    if (writtenQuestions.length === 0 || !hasAnyWrittenAnswer) {
+      // No written questions or all empty — assign 0 to all, skip AI entirely
+      for (const q of writtenQuestions) {
+        allEvaluations[q.id] = {
+          score: 0,
+          score_a: 0,
+          score_b: 0,
+          max_points_a: q.points_a || 1.5,
+          max_points_b: q.points_b || 1.7,
+          feedback_uz: "Javob berilmagan",
+          feedback_ru: "Ответ не предоставлен",
+          strengths: [],
+          missing_points: ["Javob yozilmagan / Ответ не написан"]
+        };
+      }
+
       const mcqCorrectCount = mcqQuestions.filter(q => answers[q.id] === q.correct_option).length;
-      const totalMcqMax = mcqQuestions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
       const updateData: any = {
-        ai_evaluation: allEvaluations,
+        ai_evaluation: raschData ? { ...allEvaluations, _rasch: raschData } : allEvaluations,
         mcq_score: mcqScore,
         correct_answers: mcqCorrectCount,
         written_score: 0,
         evaluation_status: 'completed',
         score: mcqScore
       };
-      
-      if (raschData) {
-        updateData.ai_evaluation = { ...allEvaluations, _rasch: raschData };
-      }
-      
+
       await supabase
         .from('test_attempts')
         .update(updateData)
         .eq('id', attempt_id);
 
       return new Response(
-        JSON.stringify({ success: true, mcq_score: mcqScore, total_score: mcqScore, rasch: raschData }),
+        JSON.stringify({ success: true, mcq_score: mcqScore, written_score: 0, total_score: mcqScore, rasch: raschData }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    // Evaluate each written question
+    // Evaluate each written question — only call AI for those with answers
     for (const question of writtenQuestions) {
       const answer = writtenAnswers[question.id] as WrittenAnswer | undefined;
       
       if (!answer || (!answer.answer_a?.trim() && !answer.answer_b?.trim())) {
+        // Empty answer = 0 ball, no AI needed
         allEvaluations[question.id] = {
           score: 0,
+          score_a: 0,
+          score_b: 0,
+          max_points_a: question.points_a || 1.5,
+          max_points_b: question.points_b || 1.7,
           feedback_uz: "Javob berilmagan",
           feedback_ru: "Ответ не предоставлен",
           strengths: [],
