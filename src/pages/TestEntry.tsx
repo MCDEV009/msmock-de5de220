@@ -224,13 +224,19 @@ function TestEntryContent() {
                     hour: '2-digit', minute: '2-digit'
                   })}
                 </Badge>
-                {isTestNotStarted && (
-                  <div className="text-center mt-2">
-                    <p className="text-sm font-mono font-bold text-primary">{formatCountdown(timeUntilStart)}</p>
-                    <p className="text-xs text-muted-foreground">boshlanishigacha</p>
+                {isTestFinished && (
+                  <div className="flex items-center gap-1 text-destructive text-xs mt-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Test yakunlangan
                   </div>
                 )}
-                {isRegistrationClosed && isTestNotStarted && (
+                {isTestNotStarted && !isTestFinished && (
+                   <div className="text-center mt-2">
+                     <p className="text-sm font-mono font-bold text-primary">{formatCountdown(timeUntilStart)}</p>
+                     <p className="text-xs text-muted-foreground">boshlanishigacha</p>
+                   </div>
+                )}
+                {isRegistrationClosed && isTestNotStarted && !isTestFinished && (
                   <div className="flex items-center gap-1 text-destructive text-xs mt-1">
                     <AlertTriangle className="h-3 w-3" />
                     Ro'yxatdan o'tish vaqti tugagan
