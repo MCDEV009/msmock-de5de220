@@ -177,10 +177,10 @@ serve(async (req) => {
       );
     }
 
-    // Timing check: attempt must have been finished within last 5 minutes
+    // Timing check: attempt must have been finished within last 30 minutes
     const finishedAt = attempt.finished_at ? new Date(attempt.finished_at).getTime() : 0;
     const now = Date.now();
-    if (now - finishedAt > 5 * 60 * 1000) {
+    if (now - finishedAt > 30 * 60 * 1000) {
       return new Response(
         JSON.stringify({ error: "Request expired" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
